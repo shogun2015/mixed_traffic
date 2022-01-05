@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes>
+	<vType carFollowModel="CACC" departSpeedd="max" id="car1" maxSpeed="10.0" vClass="passenger" />
+
+	
+	<flow begin="0" color="220,20,60" departLane="1" end="10800" id="leftToRight" probability="0.02" type="car1">
+		<route edges="l -r" />
+	</flow>
+
+	<flow begin="0" color="139,0,139" departLane="0" end="10800" id="leftToBelow" probability="0.02" type="car1">
+		<route edges="l -b" />
+	</flow>
+
+	<flow begin="0" color="248,248,255" departLane="2" end="10800" id="leftToUp" probability="0.02" type="car1">
+		<route edges="l -u" />
+	</flow>
+
+	
+	<flow begin="0" color="0,0,255" departLane="0" end="10800" id="belowToRight" probability="0.02" type="car1">
+		<route edges="b -r" />
+	</flow>
+
+	<flow begin="0" color="25,25,112" departLane="2" end="10800" id="belowToLeft" probability="0.02" type="car1">
+		<route edges="b -l" />
+	</flow>
+
+	<flow begin="0" color="112,128,144" departLane="1" end="10800" id="belowToUp" probability="0.02" type="car1">
+		<route edges="b -u" />
+	</flow>
+
+	
+	<flow begin="0" color="70,130,180" departLane="1" end="10800" id="rightToLeft" probability="0.02" type="car1">
+		<route edges="r -l" />
+	</flow>
+
+	<flow begin="0" color="0,255,255" departLane="0" end="10800" id="rightToUp" probability="0.02" type="car1">
+		<route edges="r -u" />
+	</flow>
+
+	<flow begin="0" color="127,255,170" departLane="2" end="10800" id="rightToBelow" probability="0.02" type="car1">
+		<route edges="r -b" />
+	</flow>
+
+	
+	<flow begin="0" color="0,255,127" departLane="2" end="10800" id="upToRight" probability="0.02" type="car1">
+		<route edges="u -r" />
+	</flow>
+
+	<flow begin="0" color="255,255,0" departLane="0" end="10800" id="upToLeft" probability="0.02" type="car1">
+		<route edges="u -l" />
+	</flow>
+
+	<flow begin="0" color="205,133,63" departLane="1" end="10800" id="upToBelow" probability="0.02" type="car1">
+		<route edges="u -b" />
+	</flow>
+
+</routes>

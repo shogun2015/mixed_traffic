@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes>
+	<vType carFollowModel="CACC" departSpeedd="max" id="car1" maxSpeed="10.0" vClass="passenger" />
+
+	
+	<flow begin="0" color="yellow" departLane="1" end="7200" id="leftToRight" probability="0.04" type="car1">
+		<route edges="l -r" />
+	</flow>
+	<flow begin="0" color="blue" departLane="1" end="7200" id="leftToRight2" probability="0.04" type="car2">
+		<route edges="l -r" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="0" end="7200" id="leftToBelow" probability="0.04" type="car1">
+		<route edges="l -b" />
+	</flow>
+	<flow begin="0" color="blue" departLane="0" end="7200" id="leftToBelow2" probability="0.04" type="car2">
+		<route edges="l -b" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="2" end="7200" id="leftToUp" probability="0.04" type="car1">
+		<route edges="l -u" />
+	</flow>
+	<flow begin="0" color="blue" departLane="2" end="7200" id="leftToUp2" probability="0.04" type="car2">
+		<route edges="l -u" />
+	</flow>
+
+	
+	<flow begin="0" color="yellow" departLane="0" end="7200" id="belowToRight" probability="0.04" type="car1">
+		<route edges="b -r" />
+	</flow>
+	<flow begin="0" color="blue" departLane="0" end="7200" id="belowToRight2" probability="0.04" type="car2">
+		<route edges="b -r" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="2" end="7200" id="belowToLeft" probability="0.04" type="car1">
+		<route edges="b -l" />
+	</flow>
+	<flow begin="0" color="blue" departLane="2" end="7200" id="belowToLeft2" probability="0.04" type="car2">
+		<route edges="b -l" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="1" end="7200" id="belowToUp" probability="0.04" type="car1">
+		<route edges="b -u" />
+	</flow>
+	<flow begin="0" color="blue" departLane="1" end="7200" id="belowToUp2" probability="0.04" type="car2">
+		<route edges="b -u" />
+	</flow>
+
+	
+	<flow begin="0" color="yellow" departLane="1" end="7200" id="rightToLeft" probability="0.04" type="car1">
+		<route edges="r -l" />
+	</flow>
+	<flow begin="0" color="blue" departLane="1" end="7200" id="rightToLeft2" probability="0.04" type="car2">
+		<route edges="r -l" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="0" end="7200" id="rightToUp" probability="0.04" type="car1">
+		<route edges="r -u" />
+	</flow>
+	<flow begin="0" color="blue" departLane="0" end="7200" id="rightToUp2" probability="0.04" type="car2">
+		<route edges="r -u" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="2" end="7200" id="rightToBelow" probability="0.04" type="car1">
+		<route edges="r -b" />
+	</flow>
+	<flow begin="0" color="blue" departLane="2" end="7200" id="rightToBelow2" probability="0.04" type="car2">
+		<route edges="r -b" />
+	</flow>
+
+	
+	<flow begin="0" color="yellow" departLane="2" end="7200" id="upToRight" probability="0.04" type="car1">
+		<route edges="u -r" />
+	</flow>
+	<flow begin="0" color="blue" departLane="2" end="7200" id="upToRight2" probability="0.04" type="car2">
+		<route edges="u -r" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="0" end="7200" id="upToLeft" probability="0.04" type="car1">
+		<route edges="u -l" />
+	</flow>
+	<flow begin="0" color="blue" departLane="0" end="7200" id="upToLeft2" probability="0.04" type="car2">
+		<route edges="u -l" />
+	</flow>
+
+	<flow begin="0" color="yellow" departLane="1" end="7200" id="upToBelow" probability="0.04" type="car1">
+		<route edges="u -b" />
+	</flow>
+	<flow begin="0" color="blue" departLane="1" end="7200" id="upToBelow2" probability="0.04" type="car2">
+		<route edges="u -b" />
+	</flow>
+
+</routes>

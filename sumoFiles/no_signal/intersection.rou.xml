@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <flow id="belowToLeft" begin="0.00" departLane="2" from="b" to="-l" end="10800" probability="1e-10" />
+    <flow id="belowToLeft2" begin="0.00" departLane="2" color="blue" from="b" to="-l" end="10800" probability="0.057" />
+    <flow id="belowToRight" begin="0.00" departLane="0" from="b" to="-r" end="10800" probability="1e-10" />
+    <flow id="belowToRight2" begin="0.00" departLane="0" color="blue" from="b" to="-r" end="10800" probability="0.057" />
+    <flow id="belowToUp" begin="0.00" departLane="1" from="b" to="-u" end="10800" probability="1e-10" />
+    <flow id="belowToUp2" begin="0.00" departLane="1" color="blue" from="b" to="-u" end="10800" probability="0.057" />
+    <flow id="leftToBelow" begin="0.00" departLane="0" from="l" to="-b" end="10800" probability="1e-10" />
+    <flow id="leftToBelow2" begin="0.00" departLane="0" color="blue" from="l" to="-b" end="10800" probability="0.057" />
+    <flow id="leftToRight" begin="0.00" departLane="1" from="l" to="-r" end="10800" probability="1e-10" />
+    <flow id="leftToRight2" begin="0.00" departLane="1" color="blue" from="l" to="-r" end="10800" probability="0.057" />
+    <flow id="leftToUp" begin="0.00" departLane="2" from="l" to="-u" end="10800" probability="1e-10" />
+    <flow id="leftToUp2" begin="0.00" departLane="2" color="blue" from="l" to="-u" end="10800" probability="0.057" />
+    <flow id="rightToBelow" begin="0.00" departLane="2" from="r" to="-b" end="10800" probability="1e-10" />
+    <flow id="rightToBelow2" begin="0.00" departLane="2" color="blue" from="r" to="-b" end="10800" probability="0.057" />
+    <flow id="rightToLeft" begin="0.00" departLane="1" from="r" to="-l" end="10800" probability="1e-10" />
+    <flow id="rightToLeft2" begin="0.00" departLane="1" color="blue" from="r" to="-l" end="10800" probability="0.057" />
+    <flow id="rightToUp" begin="0.00" departLane="0" from="r" to="-u" end="10800" probability="1e-10" />
+    <flow id="rightToUp2" begin="0.00" departLane="0" color="blue" from="r" to="-u" end="10800" probability="0.057" />
+    <flow id="upToBelow" begin="0.00" departLane="1" from="u" to="-b" end="10800" probability="1e-10" />
+    <flow id="upToBelow2" begin="0.00" departLane="1" color="blue" from="u" to="-b" end="10800" probability="0.057" />
+    <flow id="upToLeft" begin="0.00" departLane="0" from="u" to="-l" end="10800" probability="1e-10" />
+    <flow id="upToLeft2" begin="0.00" departLane="0" color="blue" from="u" to="-l" end="10800" probability="0.057" />
+    <flow id="upToRight" begin="0.00" departLane="2" from="u" to="-r" end="10800" probability="1e-10" />
+    <flow id="upToRight2" begin="0.00" departLane="2" color="blue" from="u" to="-r" end="10800" probability="0.057" />
+</routes>
