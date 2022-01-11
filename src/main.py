@@ -1,5 +1,7 @@
-import subprocess
+from Controller.BasicController import BasicController
 
+import subprocess
+import logging
 import numpy as np
 import pandas as pd
 import traci
@@ -19,16 +21,21 @@ auto_cfg_filepath = '../sumoFiles/no_signal/intersection.sumocfg'
 
 
 if __name__ == "__main__":
-    print("simulation start...\n")
+    logging.basicConfig(level=logging.INFO)
+    logging.info("simulation start...")
 
     sumoProcess = subprocess.Popen([sumoBinary, "-c", auto_cfg_filepath, "--remote-port", str(PORT)],
                                    stdout=sys.stdout, stderr=sys.stderr)
+    logging.info("start SUMO GUI.")
     traci.init(PORT)
+    logging.info("start TraCI.")
+
+    controller = BasicController()
+    logging.info("start " + controller.__str__() + "...")
 
     for sim_step in range(EPOCH):
         traci.simulationStep()
-
-
+        controller.simulation_step()
 
     traci.close()
     sumoProcess.kill()
