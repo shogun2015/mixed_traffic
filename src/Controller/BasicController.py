@@ -1,4 +1,5 @@
 import math
+import cv2
 from enum import Enum
 
 import traci
@@ -10,12 +11,14 @@ class LaneType(Enum):
     inJunction = 2
     Exiting = 3
 
+
 class BasicController:
 
     def __init__(self):
         # initial variable
         self.ignore_rightTurn = False
-        self.vehicles_info = dict() # {vehicleID, [laneID, LaneType, LanePos]}
+        self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
+        self.collisionVehPair = []  # [[veh1id, veh2id],...]
 
         # get info from const.py
         self.LANE_ID_set = const_var.LANE_ID
@@ -33,9 +36,14 @@ class BasicController:
     def __str__(self):
         return "Basic Controller"
 
-    # control each vehicle's action at a time step
+    """
+    control each vehicle's action at a time step
+    """
+
     def simulation_step(self):
         self._get_vehicles_info()
+        self.handleCollision()
+        self.controlVehicle()
 
     """
     Get the vehicles information in Buffered Area
@@ -49,13 +57,13 @@ class BasicController:
         for vid in vids:
             veh_color = traci.vehicle.getColor(vid)
             veh_pos = self.getVehPos(vid)
-            veh_lane = self.getVehLane(vid) # [laneID, LaneType]
+            veh_lane = self.getVehLane(vid)  # [laneID, LaneType]
             veh_lane_ID = veh_lane[0]
             veh_lane_Type = veh_lane[1]
             veh_lane_pos = self.getVehLanePosition(vid)
 
             if veh_lane_ID in self.LANE_ID_set:
-                maxAllowedSpeed = traci.lane.getMaxSpeed(veh_lane)
+                maxAllowedSpeed = traci.lane.getMaxSpeed(veh_lane_ID)
                 traci.vehicle.setMaxSpeed(vid, maxAllowedSpeed)
                 self.vehicles_info[vid] = [veh_lane_ID, veh_lane_Type, veh_lane_pos]
 
@@ -82,8 +90,8 @@ class BasicController:
             return traci.vehicle.getLanePosition(vid)
 
     """
-    Get LaneID and LaneType of Vehicle vid
-    Return [LaneID, LaneType]
+        Get LaneID and LaneType of Vehicle vid
+        Return [LaneID, LaneType]
     """
 
     def getVehLane(self, vid):
@@ -96,3 +104,46 @@ class BasicController:
         else:
             # vehicle on exiting lane
             return [traci.vehicle.getLaneID(vid), LaneType.Exiting]
+
+    """
+        Record collision vehicle pair
+    """
+
+    def handleCollision(self):
+        _vids = traci.vehicle.getIDList()
+        # O(n2) traverse all pair inside junction
+        for vid in _vids:
+            veh_lane_type_1 = self.getVehLane(vid)[1]
+            if veh_lane_type_1 is not LaneType.inJunction:
+                continue
+            for vidOther in _vids:
+                veh_lane_type_2 = self.getVehLane(vidOther)[1]
+                if veh_lane_type_2 is not LaneType.inJunction:
+                    continue
+                if vid != vidOther:
+                    veh1Pos = self.getVehPos(vid)
+                    veh2Pos = self.getVehPos(vidOther)
+                    width = traci.vehicle.getWidth(vid)
+                    height = traci.vehicle.getHeight(vid)
+                    angle1 = traci.vehicle.getAngle(vid)
+                    angle2 = traci.vehicle.getAngle(vidOther)
+                    rect1 = ((veh1Pos[0], veh1Pos[1]), (width, height), angle1)
+                    rect2 = ((veh2Pos[0], veh2Pos[1]), (width, height), angle2)
+
+                    if cv2.rotatedRectangleIntersection(rect1, rect2)[0] in [1, 2]:
+                        if [vid, vidOther] not in self.collisionVehPair \
+                                and [vidOther, vid] not in self.collisionVehPair:
+                            self.collisionVehPair.append([vid, vidOther])
+
+        print("The collision num : {}".format(len(self.collisionVehPair)))
+
+    """
+        Control each vehicle action
+    """
+
+    def controlVehicle(self):
+        # vids = traci.vehicle.getLaneID()
+        #
+        # for vid in vids:
+        pass
+
