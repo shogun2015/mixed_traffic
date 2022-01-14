@@ -1,0 +1,13 @@
+<configuration>
+   <input>
+       <net-file value="TLS.net.xml" />
+       <route-files value="TLS.rou.xml" />
+   </input>
+   <time>
+       <step-length value="0.2" />
+   </time>
+   <processing>
+       <lateral-resolution value="1." />
+       <fcd-output value="simulationResult.xml" />
+   </processing>
+</configuration>

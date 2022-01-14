@@ -13,11 +13,15 @@ sumoBinary = "/usr/share/sumo/bin/sumo-gui"
 # simulation step
 EPOCH = 7200
 
-# config file
-rou_path = "../sumoFiles/no_signal/intersection.rou.xml"
-auto_cfg_filepath = '../sumoFiles/no_signal/intersection.sumocfg'
-# signal_cfg_filepath = '../sumoFiles/signal_intersection/junction.sumocfg'
-# result_file = '../results/demand_compare.csv'
+# # config no-signal file
+# rou_path = "../sumoFiles/no_signal/intersection.rou.xml"
+# auto_cfg_filepath = '../sumoFiles/no_signal/intersection.sumocfg'
+# # signal_cfg_filepath = '../sumoFiles/signal_intersection/junction.sumocfg'
+# # result_file = '../results/demand_compare.csv'
+
+# config traffic light file
+rou_path = "../sumoFiles/signal/TLS.rou.xml"
+auto_cfg_filepath = '../sumoFiles/signal/TLS.sumocfg'
 
 
 if __name__ == "__main__":

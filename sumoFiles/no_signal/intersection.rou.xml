@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
 <!--    D - Down   U - Up  L - left    R - Right -->
-    <flow id="DToL" begin="0.00" departLane="2" arrivalLane="2" color="blue" from="b" to="-l" end="10800" probability="0.05" />
     <flow id="DToR" begin="0.00" departLane="0" arrivalLane="0" color="blue" from="b" to="-r" end="10800" probability="0.05" />
     <flow id="DToU" begin="0.00" departLane="1" arrivalLane="1" color="blue" from="b" to="-u" end="10800" probability="0.05" />
+    <flow id="DToL" begin="0.00" departLane="2" arrivalLane="2" color="blue" from="b" to="-l" end="10800" probability="0.05" />
     <flow id="LToD" begin="0.00" departLane="0" arrivalLane="0" color="blue" from="l" to="-b" end="10800" probability="0.05" />
     <flow id="LToR" begin="0.00" departLane="1" arrivalLane="1" color="blue" from="l" to="-r" end="10800" probability="0.05" />
     <flow id="LToU" begin="0.00" departLane="2" arrivalLane="2" color="blue" from="l" to="-u" end="10800" probability="0.05" />
-    <flow id="RToD" begin="0.00" departLane="2" arrivalLane="2" color="blue" from="r" to="-b" end="10800" probability="0.05" />
-    <flow id="RToL" begin="0.00" departLane="1" arrivalLane="1" color="blue" from="r" to="-l" end="10800" probability="0.05" />
     <flow id="RToU" begin="0.00" departLane="0" arrivalLane="0" color="blue" from="r" to="-u" end="10800" probability="0.05" />
-    <flow id="UToD" begin="0.00" departLane="1" arrivalLane="1" color="blue" from="u" to="-b" end="10800" probability="0.05" />
+    <flow id="RToL" begin="0.00" departLane="1" arrivalLane="1" color="blue" from="r" to="-l" end="10800" probability="0.05" />
+    <flow id="RToD" begin="0.00" departLane="2" arrivalLane="2" color="blue" from="r" to="-b" end="10800" probability="0.05" />
     <flow id="UToL" begin="0.00" departLane="0" arrivalLane="0" color="blue" from="u" to="-l" end="10800" probability="0.05" />
+    <flow id="UToD" begin="0.00" departLane="1" arrivalLane="1" color="blue" from="u" to="-b" end="10800" probability="0.05" />
     <flow id="UToR" begin="0.00" departLane="2" arrivalLane="2" color="blue" from="u" to="-r" end="10800" probability="0.05" />
 
 <!--    <flow id="belowToLeft" begin="0.00" departLane="2" from="b" to="-l" end="10800" probability="1e-10" />-->
