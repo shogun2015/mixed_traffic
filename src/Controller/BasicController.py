@@ -12,13 +12,34 @@ class LaneType(Enum):
     Exiting = 3
 
 
+class TravelTime(object):
+    """
+    Record Travel Time
+    """
+
+    def __init__(self):
+        self.entry_time = 0
+        self.exit_time = 0
+
+    def add_entry_time(self, time):
+        self.entry_time = time
+
+    def add_exit_time(self, time):
+        self.exit_time = time
+
+
 class BasicController:
 
     def __init__(self):
         # initial variable
         self.ignore_rightTurn = False
         self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
+        self.travelTimeDict = dict()  # {vehicleID, {enterTime, exitTime}}
         self.collisionVehPair = []  # [[veh1id, veh2id],...]
+        self.time_step = 0
+        self.numCollision = -1
+        self.in_loop = ['ui_0', 'ui_1', 'di_0', 'di_1', 'ri_0', 'ri_1', 'li_0', 'li_1']
+        self.exit_loop = ['uo_0', 'uo_1', 'do_0', 'do_1', 'ro_0', 'ro_1', 'lo_0', 'lo_1']
 
         # get info from const.py
         self.LANE_ID_set = const_var.LANE_ID
@@ -36,21 +57,23 @@ class BasicController:
     def __str__(self):
         return "Basic Controller"
 
-    """
-    control each vehicle's action at a time step
-    """
-
-    def simulation_step(self):
+    def simulation_step(self, time_step):
+        '''
+        control each vehicle's action at a time step
+        :param time_step:
+        :return:
+        '''
+        self.time_step = time_step
         self._get_vehicles_info()
-        self.handleCollision()
+        self._collectCollisionNum()
+        self._collectTraveTime()
         self.controlVehicle()
 
-    """
-    Get the vehicles information in Buffered Area
-    """
-
     def _get_vehicles_info(self):
-
+        '''
+        Get the vehicles information in Buffered Area
+        :return:
+        '''
         self.vehicles_info.clear()
         vids = traci.vehicle.getIDList()
 
@@ -89,12 +112,12 @@ class BasicController:
             # vehicle on exiting lane
             return traci.vehicle.getLanePosition(vid)
 
-    """
-        Get LaneID and LaneType of Vehicle vid
-        Return [LaneID, LaneType]
-    """
-
     def getVehLane(self, vid):
+        """
+        Get LaneID and LaneType of Vehicle vid
+        :param vid: the ID of vehicle
+        :return: [LaneID, LaneType]
+        """
         if traci.vehicle.getLaneID(vid) in self.LANE_ID_set:
             # vehicle on entering lane
             return [traci.vehicle.getLaneID(vid), LaneType.Entering]
@@ -105,11 +128,11 @@ class BasicController:
             # vehicle on exiting lane
             return [traci.vehicle.getLaneID(vid), LaneType.Exiting]
 
-    """
+    def _collectCollisionNum(self):
+        """
         Record collision vehicle pair
-    """
-
-    def handleCollision(self):
+        :return:
+        """
         _vids = traci.vehicle.getIDList()
         # O(n2) traverse all pair inside junction
         for vid in _vids:
@@ -134,16 +157,42 @@ class BasicController:
                         if [vid, vidOther] not in self.collisionVehPair \
                                 and [vidOther, vid] not in self.collisionVehPair:
                             self.collisionVehPair.append([vid, vidOther])
+        numCollision_inFunction = len(self.collisionVehPair)
+        if self.numCollision != numCollision_inFunction:
+            print("Timestamp:{} \t The collision num: {}".format(self.time_step, numCollision_inFunction))
+            self.numCollision = numCollision_inFunction
 
-        print("The collision num : {}".format(len(self.collisionVehPair)))
-
-    """
-        Control each vehicle action
-    """
+    def _collectTraveTime(self):
+        """
+        Collect each vehicle traveling time from induction loop
+        :return: travel time list for all vehicles
+        """
+        for in_loop_id in self.in_loop:
+            # [(veh_id, veh_length, entry_time, exit_time, vType), ...]
+            for vehData in traci.inductionloop.getVehicleData(in_loop_id):
+                veh_id = vehData[0]
+                entry_time = vehData[2]
+                if entry_time != -1.0:
+                    self.travelTimeDict[veh_id] = TravelTime()
+                    self.travelTimeDict[veh_id].add_entry_time(entry_time)
+                    # print("timestep:{} \t vid:{} \t entry:{} ".format(self.time_step, veh_id, entry_time))
+        for out_loop_id in self.exit_loop:
+            # [(veh_id, veh_length, entry_time, exit_time, vType), ...]
+            for vehData in traci.inductionloop.getVehicleData(out_loop_id):
+                veh_id = vehData[0]
+                exit_time = vehData[3]
+                if exit_time != -1.0 and veh_id in list(self.travelTimeDict.keys()):
+                    self.travelTimeDict[veh_id].add_exit_time(exit_time)
+                    print("timestep:{} \t vid:{} \t travel_time:{}".format(self.time_step, veh_id,
+                                                                           self.travelTimeDict[veh_id].exit_time -
+                                                                           self.travelTimeDict[veh_id].entry_time))
 
     def controlVehicle(self):
+        """
+        Control each vehicle action
+        :return:
+        """
         # vids = traci.vehicle.getLaneID()
         #
         # for vid in vids:
         pass
-

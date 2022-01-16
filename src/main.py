@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     for sim_step in range(EPOCH):
         traci.simulationStep()
-        controller.simulation_step()
+        controller.simulation_step(sim_step)
 
     traci.close()
     sumoProcess.kill()
