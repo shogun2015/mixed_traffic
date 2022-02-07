@@ -8423,4 +8423,37 @@
         <vehicle id="DToU_ICV.0" x="4.80" y="196.06" angle="0.00" type="DEFAULT_VEHTYPE" speed="11.23" pos="185.66" lane="-u_0" slope="0.00"/>
         <vehicle id="LToR_HDV.3" x="-5.53" y="-4.80" angle="90.00" type="DEFAULT_VEHTYPE" speed="3.46" pos="4.87" lane=":J_C_6_0" slope="0.00"/>
         <vehicle id="LToR_HDV.4" x="-62.66" y="-4.80" angle="90.00" type="DEFAULT_VEHTYPE" speed="12.26" pos="137.34" lane="l_0" slope="0.00"/>
-        <vehicle id="LToR_HDV.5" x="-187.28" y="-4.80
+        <vehicle id="LToR_HDV.5" x="-187.28" y="-4.80" angle="90.00" type="DEFAULT_VEHTYPE" speed="5.41" pos="12.72" lane="l_0" slope="0.00"/>
+        <vehicle id="LToU_HDV.0" x="-23.07" y="-1.60" angle="90.00" type="DEFAULT_VEHTYPE@LToU_HDV.0" speed="4.18" pos="176.93" lane="l_1" slope="0.00"/>
+        <vehicle id="LToU_HDV.1" x="-71.78" y="-1.60" angle="90.00" type="DEFAULT_VEHTYPE@LToU_HDV.1" speed="12.11" pos="128.22" lane="l_1" slope="0.00"/>
+        <vehicle id="LToU_HDV.2" x="-105.07" y="-1.60" angle="90.00" type="DEFAULT_VEHTYPE@LToU_HDV.2" speed="11.76" pos="94.93" lane="l_1" slope="0.00"/>
+        <vehicle id="LToU_HDV.3" x="-188.22" y="-1.60" angle="90.00" type="DEFAULT_VEHTYPE@LToU_HDV.3" speed="5.01" pos="11.78" lane="l_1" slope="0.00"/>
+        <vehicle id="LToU_ICV.0" x="-10.50" y="-1.60" angle="90.00" type="DEFAULT_VEHTYPE@LToU_ICV.0" speed="0.00" pos="189.50" lane="l_1" slope="0.00"/>
+        <vehicle id="RToD_HDV.0" x="10.50" y="1.60" angle="270.00" type="DEFAULT_VEHTYPE@RToD_HDV.0" speed="0.00" pos="189.50" lane="r_1" slope="0.00"/>
+        <vehicle id="RToD_HDV.1" x="18.11" y="1.60" angle="270.00" type="DEFAULT_VEHTYPE@RToD_HDV.1" speed="0.13" pos="181.89" lane="r_1" slope="0.00"/>
+        <vehicle id="RToD_HDV.2" x="31.84" y="1.60" angle="270.00" type="DEFAULT_VEHTYPE@RToD_HDV.2" speed="4.70" pos="168.16" lane="r_1" slope="0.00"/>
+        <vehicle id="RToD_HDV.3" x="53.58" y="1.60" angle="270.00" type="DEFAULT_VEHTYPE@RToD_HDV.3" speed="9.00" pos="146.42" lane="r_1" slope="0.00"/>
+        <vehicle id="RToD_HDV.4" x="149.44" y="1.60" angle="270.00" type="DEFAULT_VEHTYPE@RToD_HDV.4" speed="13.11" pos="50.56" lane="r_1" slope="0.00"/>
+        <vehicle id="RToD_ICV.0" x="192.33" y="1.60" angle="270.00" type="DEFAULT_VEHTYPE@RToD_ICV.0" speed="3.02" pos="7.67" lane="r_1" slope="0.00"/>
+        <vehicle id="RToL_HDV.10" x="180.32" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="7.26" pos="19.68" lane="r_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.11" x="193.54" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="2.13" pos="6.46" lane="r_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.2" x="-117.51" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="15.53" pos="107.11" lane="-l_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.3" x="-87.50" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="12.72" pos="77.10" lane="-l_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.4" x="-16.40" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="9.59" pos="6.00" lane="-l_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.5" x="14.28" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="7.32" pos="185.72" lane="r_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.6" x="39.47" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="11.40" pos="160.53" lane="r_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.7" x="75.61" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="14.89" pos="124.39" lane="r_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.8" x="122.36" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="11.60" pos="77.64" lane="r_0" slope="0.00"/>
+        <vehicle id="RToL_HDV.9" x="154.08" y="4.80" angle="270.00" type="DEFAULT_VEHTYPE" speed="12.71" pos="45.92" lane="r_0" slope="0.00"/>
+        <vehicle id="UToD_HDV.3" x="-4.80" y="-31.66" angle="180.00" type="DEFAULT_VEHTYPE" speed="12.75" pos="21.26" lane="-d_0" slope="0.00"/>
+        <vehicle id="UToD_HDV.4" x="-4.80" y="12.14" angle="180.00" type="DEFAULT_VEHTYPE" speed="7.81" pos="187.86" lane="u_0" slope="0.00"/>
+        <vehicle id="UToD_HDV.5" x="-4.80" y="50.35" angle="180.00" type="DEFAULT_VEHTYPE" speed="13.68" pos="149.65" lane="u_0" slope="0.00"/>
+        <vehicle id="UToR_HDV.1" x="136.76" y="-1.60" angle="90.00" type="DEFAULT_VEHTYPE@UToR_HDV.1" speed="12.25" pos="126.36" lane="-r_1" slope="0.00"/>
+        <vehicle id="UToR_HDV.2" x="-1.09" y="6.82" angle="174.12" type="DEFAULT_VEHTYPE@UToR_HDV.2" speed="3.36" pos="3.61" lane=":J_C_1_0" slope="0.00"/>
+        <vehicle id="UToR_HDV.3" x="-1.60" y="16.24" angle="180.00" type="DEFAULT_VEHTYPE@UToR_HDV.3" speed="1.98" pos="183.76" lane="u_1" slope="0.00"/>
+        <vehicle id="UToR_HDV.4" x="-1.60" y="24.82" angle="180.00" type="DEFAULT_VEHTYPE@UToR_HDV.4" speed="0.92" pos="175.18" lane="u_1" slope="0.00"/>
+        <vehicle id="UToR_HDV.5" x="-1.60" y="32.90" angle="180.00" type="DEFAULT_VEHTYPE@UToR_HDV.5" speed="0.47" pos="167.10" lane="u_1" slope="0.00"/>
+        <vehicle id="UToR_HDV.6" x="-1.60" y="171.76" angle="180.00" type="DEFAULT_VEHTYPE@UToR_HDV.6" speed="9.55" pos="28.24" lane="u_1" slope="0.00"/>
+        <vehicle id="UToR_HDV.7" x="-1.60" y="189.80" angle="180.00" type="DEFAULT_VEHTYPE@UToR_HDV.7" speed="4.54" pos="10.20" lane="u_1" slope="0.00"/>
+    </timestep>
+</fcd-export>
