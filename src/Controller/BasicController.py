@@ -6,6 +6,8 @@ import traci
 from src.const import const_var
 
 
+
+
 class LaneType(Enum):
     Entering = 1
     inJunction = 2
