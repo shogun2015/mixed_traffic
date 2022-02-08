@@ -110,7 +110,8 @@
 
 
     <tlLogic id="J_C" type="static" programID="0" offset="0">
-        <phase duration="60" state="GgGgGgGg"/>
+        <!--        <phase duration="60" state="GgGgGgGg"/>-->
+        <phase duration="60" state="GGGGGGGG"/>
     </tlLogic>
 
     <junction id="J_C" type="traffic_light" x="0.00" y="0.00" incLanes="u_0 u_1 r_0 r_1 d_0 d_1 l_0 l_1"
@@ -134,14 +135,14 @@
     <junction id="J_U" type="dead_end" x="0.00" y="200.00" incLanes="-u_0 -u_1" intLanes=""
               shape="0.00,200.00 6.40,200.00 0.00,200.00"/>
 
+    <connection from="u" to="-d" fromLane="0" toLane="0" via=":J_C_0_0" tl="J_C" linkIndex="0" dir="s" state="O"/>
+    <connection from="u" to="-r" fromLane="1" toLane="1" via=":J_C_1_0" tl="J_C" linkIndex="1" dir="l" state="o"/>
+    <connection from="r" to="-l" fromLane="0" toLane="0" via=":J_C_2_0" tl="J_C" linkIndex="2" dir="s" state="o"/>
+    <connection from="r" to="-d" fromLane="1" toLane="1" via=":J_C_3_0" tl="J_C" linkIndex="3" dir="l" state="o"/>
     <connection from="d" to="-u" fromLane="0" toLane="0" via=":J_C_4_0" tl="J_C" linkIndex="4" dir="s" state="O"/>
     <connection from="d" to="-l" fromLane="1" toLane="1" via=":J_C_5_0" tl="J_C" linkIndex="5" dir="l" state="o"/>
     <connection from="l" to="-r" fromLane="0" toLane="0" via=":J_C_6_0" tl="J_C" linkIndex="6" dir="s" state="o"/>
     <connection from="l" to="-u" fromLane="1" toLane="1" via=":J_C_7_0" tl="J_C" linkIndex="7" dir="l" state="o"/>
-    <connection from="r" to="-l" fromLane="0" toLane="0" via=":J_C_2_0" tl="J_C" linkIndex="2" dir="s" state="o"/>
-    <connection from="r" to="-d" fromLane="1" toLane="1" via=":J_C_3_0" tl="J_C" linkIndex="3" dir="l" state="o"/>
-    <connection from="u" to="-d" fromLane="0" toLane="0" via=":J_C_0_0" tl="J_C" linkIndex="0" dir="s" state="O"/>
-    <connection from="u" to="-r" fromLane="1" toLane="1" via=":J_C_1_0" tl="J_C" linkIndex="1" dir="l" state="o"/>
 
     <connection from=":J_C_0" to="-d" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":J_C_1" to="-r" fromLane="0" toLane="1" dir="l" state="M"/>
