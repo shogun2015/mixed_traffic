@@ -77,6 +77,7 @@ class BasicController:
         self.numCollision = -1
         self.in_loop = ['ui_0', 'ui_1', 'di_0', 'di_1', 'ri_0', 'ri_1', 'li_0', 'li_1']
         self.exit_loop = ['uo_0', 'uo_1', 'do_0', 'do_1', 'ro_0', 'ro_1', 'lo_0', 'lo_1']
+        self.stop_vehs = []  # The veh which is stoping (Receive the stop commend)
 
     def __str__(self):
         return "Basic Controller"
@@ -90,9 +91,12 @@ class BasicController:
         self.time_step = time_step
         self.data_clear_step()
         self._get_vehicles_info()
+        if time_step < 250:
+            self.control_ICV()
+        else:
+            self.test_ICV_resume()
         # self._collectCollisionNum()
         self._collectTraveTime()
-        self.controlVehicle()
 
     def _get_vehicles_info(self):
         """
@@ -136,7 +140,7 @@ class BasicController:
                     first_ICV_in_lane[LaneID].append(
                         [veh_info[0], veh_info[1], veh_info[2], index])  # [vid, ICV/HDV, dist2junction, front_veh_num]
 
-        print(first_ICV_in_lane)
+        # print(first_ICV_in_lane)
 
     def getVehPos(self, vid):
         """
@@ -255,12 +259,38 @@ class BasicController:
         for key in first_ICV_in_lane.keys():
             first_ICV_in_lane[key].clear()
 
-    def controlVehicle(self):
+    def control_ICV(self):
         """
-        Control each vehicle action
+        Control each ICV action
         :return:
         """
         # vids = traci.vehicle.getLaneID()
         #
         # for vid in vids:
-        pass
+        for key in first_ICV_in_lane.keys():
+            if first_ICV_in_lane[key]:
+                ICV_info = first_ICV_in_lane[key][0]  # The first ICV in current Lane
+                ICV_id = ICV_info[0]
+                edge_id, lane_id = key.split('_')
+                # traci.vehicle.changeTarget(vehID=v_id, edgeID=edge_id)
+                self.ICV_stop(vehID=ICV_id, edgeID=edge_id, pos=189., laneIndex=int(lane_id))
+
+    def ICV_stop(self, vehID, edgeID, pos, laneIndex):
+        self.stop_vehs.append(vehID)
+        traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=pos, laneIndex=laneIndex)
+
+    def ICV_resume(self, vid):
+        if traci.vehicle.getSpeed(vid) == 0 and vid in self.stop_vehs:
+            traci.vehicle.resume(vid)
+            self.stop_vehs.remove(vid)
+        else:
+            traci.vehicle.setSpeed(vid, -1)
+
+    def test_ICV_resume(self):
+        for key in first_ICV_in_lane.keys():
+            if first_ICV_in_lane[key]:
+                ICV_info = first_ICV_in_lane[key][0]  # The first ICV in current Lane
+                ICV_id = ICV_info[0]
+                self.ICV_resume(ICV_id)
+
+
