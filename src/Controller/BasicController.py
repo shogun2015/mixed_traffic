@@ -1,4 +1,6 @@
 import math
+from typing import Dict, Any
+
 import cv2
 from enum import Enum
 
@@ -31,7 +33,7 @@ vehs_in_lane = {
 }
 
 # a dict contains each lane's first ICV
-first_ICV_in_lane = {
+ICV_in_lane = {
     "u_0": [],
     "u_1": [],
     "r_0": [],
@@ -91,11 +93,13 @@ class BasicController:
         self.time_step = time_step
         self.data_clear_step()
         self._get_vehicles_info()
-        if time_step < 250:
-            self.control_ICV()
-        else:
-            self.test_ICV_resume()
+        # if time_step < 250:
+        #     self.test_ICV_stop()
+        # else:
+        #     self.test_ICV_resume()
         # self._collectCollisionNum()
+        NN_action = []
+        self.ICV_control(NN_action)
         self._collectTraveTime()
 
     def _get_vehicles_info(self):
@@ -133,14 +137,14 @@ class BasicController:
                 # ignore exit lane
                 pass
 
-        # Produce first_ICV_in_lane
+        # Produce ICV_in_lane
         for LaneID in vehs_in_lane.keys():
             for index, veh_info in enumerate(vehs_in_lane[LaneID]):
                 if veh_info[1] == "ICV":
-                    first_ICV_in_lane[LaneID].append(
+                    ICV_in_lane[LaneID].append(
                         [veh_info[0], veh_info[1], veh_info[2], index])  # [vid, ICV/HDV, dist2junction, front_veh_num]
 
-        # print(first_ICV_in_lane)
+        # print(ICV_in_lane)
 
     def getVehPos(self, vid):
         """
@@ -256,41 +260,45 @@ class BasicController:
             veh_num_in_Junction[key] = 0
         for key in vehs_in_lane.keys():
             vehs_in_lane[key].clear()
-        for key in first_ICV_in_lane.keys():
-            first_ICV_in_lane[key].clear()
+        for key in ICV_in_lane.keys():
+            ICV_in_lane[key].clear()
 
-    def control_ICV(self):
-        """
-        Control each ICV action
-        :return:
-        """
-        # vids = traci.vehicle.getLaneID()
-        #
-        # for vid in vids:
-        for key in first_ICV_in_lane.keys():
-            if first_ICV_in_lane[key]:
-                ICV_info = first_ICV_in_lane[key][0]  # The first ICV in current Lane
-                ICV_id = ICV_info[0]
-                edge_id, lane_id = key.split('_')
-                # traci.vehicle.changeTarget(vehID=v_id, edgeID=edge_id)
-                self.ICV_stop(vehID=ICV_id, edgeID=edge_id, pos=189., laneIndex=int(lane_id))
+    def ICV_control(self, actions_NN: list) -> Dict[str, Any]:
+        ICV_action_map = {}
+        for index, laneID in enumerate(ICV_in_lane.keys()):
+            if ICV_in_lane[laneID]:
+                first_ICV = ICV_in_lane[laneID][0]  # [vid, ICV/HDV, dist2junction, front_veh_num]
+                first_ICV_ID = first_ICV[0]
+                ICV_action_map[first_ICV_ID] = actions_NN[index]
+        return ICV_action_map
 
-    def ICV_stop(self, vehID, edgeID, pos, laneIndex):
+
+    def ICV_stop(self, vehID):
         self.stop_vehs.append(vehID)
-        traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=pos, laneIndex=laneIndex)
+        lane_ID = traci.vehicle.getLaneID(vehID)
+        edgeID, laneIndex = lane_ID.spilt('_')
+        traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
+        # 189. is a magic number. If there is two-lane for junction arm, 11.m prevent vehicle from entering junction
 
-    def ICV_resume(self, vid):
-        if traci.vehicle.getSpeed(vid) == 0 and vid in self.stop_vehs:
-            traci.vehicle.resume(vid)
-            self.stop_vehs.remove(vid)
+    def ICV_resume(self, vehID):
+        if traci.vehicle.getSpeed(vehID) == 0 and vehID in self.stop_vehs:
+            traci.vehicle.resume(vehID)
+            self.stop_vehs.remove(vehID)
         else:
-            traci.vehicle.setSpeed(vid, -1)
+            traci.vehicle.setSpeed(vehID, -1)
 
-    def test_ICV_resume(self):
-        for key in first_ICV_in_lane.keys():
-            if first_ICV_in_lane[key]:
-                ICV_info = first_ICV_in_lane[key][0]  # The first ICV in current Lane
-                ICV_id = ICV_info[0]
-                self.ICV_resume(ICV_id)
+    # def test_ICV_stop(self):
+    #     for key in ICV_in_lane.keys():
+    #         if ICV_in_lane[key]:
+    #             ICV_info = ICV_in_lane[key][0]  # The first ICV in current Lane
+    #             ICV_id = ICV_info[0]
+    #             edge_id, lane_id = key.split('_')
+    #             # traci.vehicle.changeTarget(vehID=v_id, edgeID=edge_id)
+    #             self.ICV_stop(vehID=ICV_id)
 
-
+    # def test_ICV_resume(self):
+    #     for key in ICV_in_lane.keys():
+    #         if ICV_in_lane[key]:
+    #             ICV_info = ICV_in_lane[key][0]  # The first ICV in current Lane
+    #             ICV_id = ICV_info[0]
+    #             self.ICV_resume(ICV_id)
