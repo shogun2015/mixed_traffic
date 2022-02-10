@@ -1,10 +1,8 @@
 import math
-from typing import Dict, Any
-
-import cv2
 from enum import Enum
 
 import traci
+
 from src.const import const_var
 
 # the vehicle number on junction lane
@@ -32,7 +30,7 @@ vehs_in_lane = {
     "l_1": []
 }
 
-# a dict contains each lane's first ICV
+# a dict contains each lane's ICVs
 ICV_in_lane = {
     "u_0": [],
     "u_1": [],
@@ -71,35 +69,51 @@ class BasicController:
 
     def __init__(self):
         # initial variable
-        self.ignore_rightTurn = False
-        self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
-        self.travelTimeDict = dict()  # {vehicleID, {enterTime, exitTime}}
-        # self.collisionVehPair = []  # [[veh1id, veh2id],...]
         self.time_step = 0
-        self.numCollision = -1
+        self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
+        self.stop_vehs = list()  # The veh which is stoping (Receive the stop commend)
+
+        # For record enter and exit time
+        self.travelTimeDict = dict()  # {vehicleID, {enterTime, exitTime}}
         self.in_loop = ['ui_0', 'ui_1', 'di_0', 'di_1', 'ri_0', 'ri_1', 'li_0', 'li_1']
         self.exit_loop = ['uo_0', 'uo_1', 'do_0', 'do_1', 'ro_0', 'ro_1', 'lo_0', 'lo_1']
-        self.stop_vehs = []  # The veh which is stoping (Receive the stop commend)
+
+        # unused
+        # self.numCollision = -1
+        # self.collisionVehPair = []  # [[veh1id, veh2id],...]
 
     def __str__(self):
         return "Basic Controller"
 
-    def simulation_step(self, time_step):
-        """
-        control each vehicle's action at a time step
-        :param time_step:
-        :return:
-        """
-        self.time_step = time_step
+    # def simulation_step(self, time_step):
+    #     """
+    #     control each vehicle's action at a time step
+    #     :param time_step:
+    #     :return:
+    #     """
+    #     self.time_step = time_step
+    #     self.data_clear_step()
+    #     self._get_vehicles_info()
+    #     # if time_step < 250:
+    #     #     self.test_ICV_stop()
+    #     # else:
+    #     #     self.test_ICV_resume()
+    #     # self._collectCollisionNum()
+    #     NN_action = list()
+    #
+    #     self.ICV_control(NN_action)
+    #     self._collectTraveTime()
+
+    def feature_step(self, timestep):
+        self.time_step = timestep
         self.data_clear_step()
+        feature = list()  # TODO: produce a feature matrix
         self._get_vehicles_info()
-        # if time_step < 250:
-        #     self.test_ICV_stop()
-        # else:
-        #     self.test_ICV_resume()
-        # self._collectCollisionNum()
-        NN_action = []
-        self.ICV_control(NN_action)
+
+        return feature
+
+    def run_step(self, GAT_actions):
+        self.ICV_control(GAT_actions)
         self._collectTraveTime()
 
     def _get_vehicles_info(self):
@@ -256,6 +270,7 @@ class BasicController:
 
     def data_clear_step(self):
         self.vehicles_info.clear()
+        self.stop_vehs.clear()
         for key in veh_num_in_Junction.keys():
             veh_num_in_Junction[key] = 0
         for key in vehs_in_lane.keys():
@@ -263,15 +278,17 @@ class BasicController:
         for key in ICV_in_lane.keys():
             ICV_in_lane[key].clear()
 
-    def ICV_control(self, actions_NN: list) -> Dict[str, Any]:
-        ICV_action_map = {}
+    def ICV_control(self, actions_NN: list):
+        ICV_action_map = dict()
         for index, laneID in enumerate(ICV_in_lane.keys()):
             if ICV_in_lane[laneID]:
                 first_ICV = ICV_in_lane[laneID][0]  # [vid, ICV/HDV, dist2junction, front_veh_num]
                 first_ICV_ID = first_ICV[0]
-                ICV_action_map[first_ICV_ID] = actions_NN[index]
-        return ICV_action_map
-
+                # ICV_action_map[first_ICV_ID] = actions_NN[index]
+                if actions_NN[index] == 0:
+                    self.ICV_stop(first_ICV_ID)
+                else:
+                    self.ICV_resume(first_ICV_ID)
 
     def ICV_stop(self, vehID):
         self.stop_vehs.append(vehID)

@@ -44,7 +44,7 @@ class const_var:
         LS  x   o   o   x   x   x   o   o
     '''
 
-    lane_adj = np.array([[0, 0, 1, 0, 0, 1, 1, 1],
+    lane_adjacent = np.array([[0, 0, 1, 0, 0, 1, 1, 1],
                          [0, 0, 1, 1, 1, 0, 1, 0],
                          [1, 1, 0, 0, 1, 0, 1, 0],
                          [0, 1, 0, 0, 1, 1, 0, 1],
