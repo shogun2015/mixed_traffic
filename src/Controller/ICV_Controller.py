@@ -73,44 +73,26 @@ class ICV_Controller:
         self.time_step = 0
         self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
         self.stop_vehs = list()  # The veh which is stoping (Receive the stop commend)
+        self.veh_speed_junction = list()  # vehicles' speed list in junction
 
         # For record enter and exit time
         self.travelTimeDict = dict()  # {vehicleID, {enterTime, exitTime}}
         self.in_loop = ['ui_0', 'ui_1', 'di_0', 'di_1', 'ri_0', 'ri_1', 'li_0', 'li_1']
         self.exit_loop = ['uo_0', 'uo_1', 'do_0', 'do_1', 'ro_0', 'ro_1', 'lo_0', 'lo_1']
 
-        # unused
-        # self.numCollision = -1
-        # self.collisionVehPair = []  # [[veh1id, veh2id],...]
-
     def __str__(self):
         return "Basic Controller"
-
-    # def simulation_step(self, time_step):
-    #     """
-    #     control each vehicle's action at a time step
-    #     :param time_step:
-    #     :return:
-    #     """
-    #     self.time_step = time_step
-    #     self.data_clear_step()
-    #     self._get_vehicles_info()
-    #     # if time_step < 250:
-    #     #     self.test_ICV_stop()
-    #     # else:
-    #     #     self.test_ICV_resume()
-    #     # self._collectCollisionNum()
-    #     NN_action = list()
-    #
-    #     self.ICV_control(NN_action)
-    #     self._collectTraveTime()
 
     def feature_step(self, timestep):
         self.time_step = timestep
         self.data_clear_step()
-        feature = list()  # TODO: produce a feature matrix
-        self._get_vehicles_info()
-        return feature
+        feature = self._get_vehicles_info()
+
+        avg_speed_junction = 0.
+        if self.veh_speed_junction:
+            avg_speed_junction = np.mean(self.veh_speed_junction)
+
+        return feature, avg_speed_junction
 
     def run_step(self, GAT_actions):
         self.ICV_control(GAT_actions)
@@ -147,6 +129,7 @@ class ICV_Controller:
                     vehs_in_lane[veh_lane_ID].insert(0, [vid, veh_type, veh_lane_pos])
             elif veh_lane_ID in const_var.JUNCTION_ID:
                 veh_num_in_Junction[veh_lane_ID] += 1
+                self.veh_speed_junction.append(traci.vehicle.getSpeed(vid))
             else:
                 # ignore exit lane
                 pass
@@ -237,40 +220,6 @@ class ICV_Controller:
             # vehicle on exiting lane
             return [traci.vehicle.getLaneID(vid), LaneType.Exiting]
 
-    # def _collectCollisionNum(self):
-    #     """
-    #     Record collision vehicle pair
-    #     :return:
-    #     """
-    #     _vids = traci.vehicle.getIDList()
-    #     # O(n2) traverse all pair inside junction
-    #     for vid in _vids:
-    #         veh_lane_type_1 = self.getVehLane(vid)[1]
-    #         if veh_lane_type_1 is not LaneType.inJunction:
-    #             continue
-    #         for vidOther in _vids:
-    #             veh_lane_type_2 = self.getVehLane(vidOther)[1]
-    #             if veh_lane_type_2 is not LaneType.inJunction:
-    #                 continue
-    #             if vid != vidOther:
-    #                 veh1Pos = self.getVehPos(vid)
-    #                 veh2Pos = self.getVehPos(vidOther)
-    #                 width = traci.vehicle.getWidth(vid)
-    #                 height = traci.vehicle.getHeight(vid)
-    #                 angle1 = traci.vehicle.getAngle(vid)
-    #                 angle2 = traci.vehicle.getAngle(vidOther)
-    #                 rect1 = ((veh1Pos[0], veh1Pos[1]), (width, height), angle1)
-    #                 rect2 = ((veh2Pos[0], veh2Pos[1]), (width, height), angle2)
-    #
-    #                 if cv2.rotatedRectangleIntersection(rect1, rect2)[0] in [1, 2]:
-    #                     if [vid, vidOther] not in self.collisionVehPair \
-    #                             and [vidOther, vid] not in self.collisionVehPair:
-    #                         self.collisionVehPair.append([vid, vidOther])
-    #     numCollision_inFunction = len(self.collisionVehPair)
-    #     if self.numCollision != numCollision_inFunction:
-    #         print("Timestamp:{} \t The collision num: {}".format(self.time_step, numCollision_inFunction))
-    #         self.numCollision = numCollision_inFunction
-
     def _collectTraveTime(self):
         """
         Collect each vehicle traveling time from induction loop
@@ -299,6 +248,7 @@ class ICV_Controller:
     def data_clear_step(self):
         self.vehicles_info.clear()
         self.stop_vehs.clear()
+        self.veh_speed_junction.clear()
         for key in veh_num_in_Junction.keys():
             veh_num_in_Junction[key] = 0
         for key in vehs_in_lane.keys():

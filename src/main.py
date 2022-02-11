@@ -28,18 +28,25 @@ EPOCH = 7200
 rou_path = "../sumoFiles/signal/TLS.rou.xml"
 auto_cfg_filepath = '../sumoFiles/signal/TLS.sumocfg'
 
+
+def simulation_start():
+    sumoProcess = subprocess.Popen([sumoBinary, "-c", auto_cfg_filepath, "--remote-port", str(PORT)],
+                                   stdout=sys.stdout, stderr=sys.stderr)
+    logging.info("start SUMO GUI.")
+
+    traci.init(PORT)
+    logging.info("start TraCI.")
+
+    return sumoProcess
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logging.info("simulation start...")
 
-    sumoProcess = subprocess.Popen([sumoBinary, "-c", auto_cfg_filepath, "--remote-port", str(PORT)],
-                                   stdout=sys.stdout, stderr=sys.stderr)
-    logging.info("start SUMO GUI.")
-    traci.init(PORT)
-    logging.info("start TraCI.")
+    sumoProcess = simulation_start()
 
     controller = ICV_Controller()
-    logging.info("start " + controller.__str__() + "...")
 
     # GAT-related
     nfeat = 5
@@ -49,8 +56,13 @@ if __name__ == "__main__":
     # 3 - Distance from the first ICV to stop line
     # 4 - Vehicle number after the first ICV
     # 5 - HDV number from the first ICV and the second ICV
-    nclass = 2      # Two actions: enter / not enter junction
-    # TODO: reward:
+    nclass = 2  # Two actions: enter / not enter junction
+
+    """
+    TODO: reward:
+    1. 静止的车辆数目变化（TODO）
+    """
+
     # The specific below numbers get from pyGAT default number
     model = GAT(nfeat=nfeat, nhid=8, nclass=nclass, dropout=0.6, nheads=8, alpha=0.2)
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=5e-4)
@@ -65,12 +77,20 @@ if __name__ == "__main__":
 
     adj = Variable(adj)
 
+    # reset: when the speed of all vehicles inside intersection is 0
     for sim_step in range(EPOCH):
         traci.simulationStep()
+        features, avg_speed_junction = controller.feature_step(timestep=sim_step)
+        # If average speed of vehicles in junciton is too slow, the junction is deadlock.
+        # The simulation need to be reset
+        if avg_speed_junction < 0.1:
+            traci.close()
+            sumoProcess.kill()
+            sumoProcess = simulation_start()
+
         # GAT-related process
         model.train()
         optimizer.zero_grad()
-        features = controller.feature_step(timestep=sim_step)
         norm_feat = normalize_features(features)
         GAT_output = model(x=norm_feat, adj=adj)
         controller.run_step(GAT_output)
