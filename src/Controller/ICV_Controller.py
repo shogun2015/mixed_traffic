@@ -1,5 +1,6 @@
 import math
 from enum import Enum
+import numpy as np
 
 import traci
 
@@ -65,7 +66,7 @@ class TravelTime(object):
         self.exit_time = time
 
 
-class BasicController:
+class ICV_Controller:
 
     def __init__(self):
         # initial variable
@@ -109,7 +110,6 @@ class BasicController:
         self.data_clear_step()
         feature = list()  # TODO: produce a feature matrix
         self._get_vehicles_info()
-
         return feature
 
     def run_step(self, GAT_actions):
@@ -151,14 +151,42 @@ class BasicController:
                 # ignore exit lane
                 pass
 
-        # Produce ICV_in_lane
+        features = np.zeros(shape=[1, 5], dtype=int)  # a base row for adding more data
         for LaneID in vehs_in_lane.keys():
+            # construct ICVs' info in lane (ICV_in_lane)
             for index, veh_info in enumerate(vehs_in_lane[LaneID]):
                 if veh_info[1] == "ICV":
                     ICV_in_lane[LaneID].append(
                         [veh_info[0], veh_info[1], veh_info[2], index])  # [vid, ICV/HDV, dist2junction, front_veh_num]
+            # construct feature for GAT (features)
+            # Produce feature:
+            # 1 - Vehicle number in the corresponding junction lane
+            feat_veh_num_junction = veh_num_in_Junction[LaneID]
+            if ICV_in_lane[LaneID]:
+                # 2 - HDV number from the first ICV to stop line
+                feat_HDV_num_before = ICV_in_lane[LaneID][0][3]
+                # 3 - Distance from the first ICV to stop line
+                feat_dist2stop = ICV_in_lane[LaneID][0][2]
+                # 4 - Vehicle number after the first ICV
+                feat_veh_num_after = len(vehs_in_lane[LaneID]) - ICV_in_lane[LaneID][0][3] - 1
+                # 5 - HDV number from the first ICV and the second ICV
+                feat_HDV_num_between_ICV = ICV_in_lane[LaneID][1][3] - ICV_in_lane[LaneID][0][3] - 1 if len(
+                    ICV_in_lane[LaneID]) > 1 else len(vehs_in_lane[LaneID]) - ICV_in_lane[LaneID][0][3]
 
-        # print(ICV_in_lane)
+            else:
+                feat_HDV_num_before = len(vehs_in_lane[LaneID])
+                feat_dist2stop = const_var.LANE_LENGTH - 10
+                feat_veh_num_after = 0
+                feat_HDV_num_between_ICV = 0
+
+            row = np.array([feat_veh_num_junction,
+                            feat_HDV_num_before,
+                            feat_dist2stop,
+                            feat_veh_num_after,
+                            feat_HDV_num_between_ICV])
+            features = np.row_stack([features, row])
+        features = features[1:, :]  # remove the first row
+        return features
 
     def getVehPos(self, vid):
         """
