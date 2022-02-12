@@ -48,6 +48,10 @@ if __name__ == "__main__":
 
     controller = ICV_Controller()
 
+    # simulation environment related
+    static_veh_num = 0
+    static_veh_num_last_step = 0
+
     # GAT-related
     nfeat = 5
     # feature:
@@ -57,11 +61,6 @@ if __name__ == "__main__":
     # 4 - Vehicle number after the first ICV
     # 5 - HDV number from the first ICV and the second ICV
     nclass = 2  # Two actions: enter / not enter junction
-
-    """
-    TODO: reward:
-    1. 静止的车辆数目变化（TODO）
-    """
 
     # The specific below numbers get from pyGAT default number
     model = GAT(nfeat=nfeat, nhid=8, nclass=nclass, dropout=0.6, nheads=8, alpha=0.2)
@@ -80,10 +79,15 @@ if __name__ == "__main__":
     # reset: when the speed of all vehicles inside intersection is 0
     for sim_step in range(EPOCH):
         traci.simulationStep()
-        features, avg_speed_junction = controller.feature_step(timestep=sim_step)
+        features, avg_speed_junction, static_veh_num = controller.feature_step(timestep=sim_step)
+
+        # Reward: less static vehicles
+        reward = static_veh_num_last_step - static_veh_num
+        static_veh_num_last_step = static_veh_num
+
         # If average speed of vehicles in junciton is too slow, the junction is deadlock.
         # The simulation need to be reset
-        if avg_speed_junction < 0.1:
+        if avg_speed_junction < 0.1 or sim_step > 7000:
             traci.close()
             sumoProcess.kill()
             sumoProcess = simulation_start()

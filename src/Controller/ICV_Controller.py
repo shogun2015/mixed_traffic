@@ -71,6 +71,7 @@ class ICV_Controller:
     def __init__(self):
         # initial variable
         self.time_step = 0
+        self.static_veh_num = 0
         self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
         self.stop_vehs = list()  # The veh which is stoping (Receive the stop commend)
         self.veh_speed_junction = list()  # vehicles' speed list in junction
@@ -81,7 +82,7 @@ class ICV_Controller:
         self.exit_loop = ['uo_0', 'uo_1', 'do_0', 'do_1', 'ro_0', 'ro_1', 'lo_0', 'lo_1']
 
     def __str__(self):
-        return "Basic Controller"
+        return "ICV Controller"
 
     def feature_step(self, timestep):
         self.time_step = timestep
@@ -91,8 +92,10 @@ class ICV_Controller:
         avg_speed_junction = 0.
         if self.veh_speed_junction:
             avg_speed_junction = np.mean(self.veh_speed_junction)
+        else:
+            avg_speed_junction = 10 # Any number that is not 0. 0 leads to simulation reset.
 
-        return feature, avg_speed_junction
+        return feature, avg_speed_junction, self.static_veh_num
 
     def run_step(self, GAT_actions):
         self.ICV_control(GAT_actions)
@@ -133,6 +136,9 @@ class ICV_Controller:
             else:
                 # ignore exit lane
                 pass
+            # Record static vehicle number
+            if traci.vehicle.getSpeed(vid) < 0.1:
+                self.static_veh_num += 1
 
         features = np.zeros(shape=[1, 5], dtype=int)  # a base row for adding more data
         for LaneID in vehs_in_lane.keys():
@@ -249,6 +255,7 @@ class ICV_Controller:
         self.vehicles_info.clear()
         self.stop_vehs.clear()
         self.veh_speed_junction.clear()
+        self.static_veh_num = 0
         for key in veh_num_in_Junction.keys():
             veh_num_in_Junction[key] = 0
         for key in vehs_in_lane.keys():
@@ -257,12 +264,10 @@ class ICV_Controller:
             ICV_in_lane[key].clear()
 
     def ICV_control(self, actions_NN: list):
-        ICV_action_map = dict()
         for index, laneID in enumerate(ICV_in_lane.keys()):
             if ICV_in_lane[laneID]:
                 first_ICV = ICV_in_lane[laneID][0]  # [vid, ICV/HDV, dist2junction, front_veh_num]
                 first_ICV_ID = first_ICV[0]
-                # ICV_action_map[first_ICV_ID] = actions_NN[index]
                 if actions_NN[index] == 0:
                     self.ICV_stop(first_ICV_ID)
                 else:
