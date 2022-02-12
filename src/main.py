@@ -14,7 +14,8 @@ from const import const_var
 
 # simulation port and software
 PORT = 8813
-sumoBinary = "/usr/share/sumo/bin/sumo-gui"
+sumoBinary_w_gui = "/usr/share/sumo/bin/sumo-gui"
+sumoBinary = "/usr/share/sumo/bin/sumo"
 # simulation step
 EPOCH = 7200
 
@@ -30,7 +31,7 @@ auto_cfg_filepath = '../sumoFiles/signal/TLS.sumocfg'
 
 
 def simulation_start():
-    sumoProcess = subprocess.Popen([sumoBinary, "-c", auto_cfg_filepath, "--remote-port", str(PORT)],
+    sumoProcess = subprocess.Popen([sumoBinary_w_gui, "-c", auto_cfg_filepath, "--remote-port", str(PORT)],
                                    stdout=sys.stdout, stderr=sys.stderr)
     logging.info("start SUMO GUI.")
 
@@ -85,9 +86,9 @@ if __name__ == "__main__":
         reward = static_veh_num_last_step - static_veh_num
         static_veh_num_last_step = static_veh_num
 
-        # If average speed of vehicles in junciton is too slow, the junction is deadlock.
+        # If average speed of vehicles in junction is too slow, the junction is deadlock.
         # The simulation need to be reset
-        if avg_speed_junction < 0.1 or sim_step > 7000:
+        if avg_speed_junction < 0.1 or sim_step > EPOCH - 100:
             traci.close()
             sumoProcess.kill()
             sumoProcess = simulation_start()
