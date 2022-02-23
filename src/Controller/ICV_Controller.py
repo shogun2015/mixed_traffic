@@ -6,16 +6,16 @@ import traci
 
 from src.const import const_var
 
-# the vehicle number on junction lane
+# the vehicle number on junction lane, using this with junction_sourceLane_map
 veh_num_in_Junction = {
-    ":J_C_0_0": 0,
-    ":J_C_1_0": 0,
-    ":J_C_2_0": 0,
-    ":J_C_3_0": 0,
-    ":J_C_4_0": 0,
-    ":J_C_5_0": 0,
-    ":J_C_6_0": 0,
-    ":J_C_7_0": 0
+    "u_0": 0,
+    "u_1": 0,
+    "r_0": 0,
+    "r_1": 0,
+    "d_0": 0,
+    "d_1": 0,
+    "l_0": 0,
+    "l_1": 0
 }
 
 # a vehicle info list in dict
@@ -131,7 +131,7 @@ class ICV_Controller:
                 else:
                     vehs_in_lane[veh_lane_ID].insert(0, [vid, veh_type, veh_lane_pos])
             elif veh_lane_ID in const_var.JUNCTION_ID:
-                veh_num_in_Junction[veh_lane_ID] += 1
+                veh_num_in_Junction[const_var.junction_sourceLane_map[veh_lane_ID]] += 1
                 self.veh_speed_junction.append(traci.vehicle.getSpeed(vid))
             else:
                 # ignore exit lane
@@ -276,7 +276,7 @@ class ICV_Controller:
     def ICV_stop(self, vehID):
         self.stop_vehs.append(vehID)
         lane_ID = traci.vehicle.getLaneID(vehID)
-        edgeID, laneIndex = lane_ID.spilt('_')
+        edgeID, laneIndex = lane_ID.split("_")
         traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
         # 189. is a magic number. If there is two-lane for junction arm, 11.m prevent vehicle from entering junction
 
