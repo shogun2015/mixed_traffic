@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic")
 import math
 from enum import Enum
 import numpy as np
@@ -80,6 +82,8 @@ class ICV_Controller:
         self.travelTimeDict = dict()  # {vehicleID, {enterTime, exitTime}}
         self.in_loop = ['ui_0', 'ui_1', 'di_0', 'di_1', 'ri_0', 'ri_1', 'li_0', 'li_1']
         self.exit_loop = ['uo_0', 'uo_1', 'do_0', 'do_1', 'ro_0', 'ro_1', 'lo_0', 'lo_1']
+        self.lane_vehicle_num = [0 for _ in range(8)]
+        self.static_veh_in_junction = 0
 
     def __str__(self):
         return "ICV Controller"
@@ -95,7 +99,7 @@ class ICV_Controller:
         else:
             avg_speed_junction = 10 # Any number that is not 0. 0 leads to simulation reset.
 
-        return feature, avg_speed_junction, self.static_veh_num
+        return feature, avg_speed_junction, self.static_veh_num, min(self.lane_vehicle_num), max(self.lane_vehicle_num), self.static_veh_in_junction
 
     def run_step(self, GAT_actions):
         self.ICV_control(GAT_actions)
@@ -107,7 +111,8 @@ class ICV_Controller:
         :return:
         """
         vids = traci.vehicle.getIDList()
-
+        self.lane_vehicle_num = [0 for _ in range(8)]
+        self.static_veh_in_junction = 0
         # Produce vehs_in_lane
         for vid in vids:
             veh_color = traci.vehicle.getColor(vid)
@@ -133,11 +138,15 @@ class ICV_Controller:
             elif veh_lane_ID in const_var.JUNCTION_ID:
                 veh_num_in_Junction[const_var.junction_sourceLane_map[veh_lane_ID]] += 1
                 self.veh_speed_junction.append(traci.vehicle.getSpeed(vid))
+                if traci.vehicle.getSpeed(vid) < 0.01:
+                    self.static_veh_in_junction += 1
             else:
                 # ignore exit lane
                 pass
             # Record static vehicle number
             if traci.vehicle.getSpeed(vid) < 0.1:
+                if veh_lane_ID in const_var.LANE_ID:
+                    self.lane_vehicle_num[const_var.LANE_ID.index(veh_lane_ID)] += 1
                 self.static_veh_num += 1
 
         features = np.zeros(shape=[1, 5], dtype=int)  # a base row for adding more data
@@ -154,6 +163,8 @@ class ICV_Controller:
             if ICV_in_lane[LaneID]:
                 # 2 - HDV number from the first ICV to stop line
                 feat_HDV_num_before = ICV_in_lane[LaneID][0][3]
+                if not self.can_stop(ICV_in_lane[LaneID][0][0]):
+                    feat_HDV_num_before += 1
                 # 3 - Distance from the first ICV to stop line
                 feat_dist2stop = ICV_in_lane[LaneID][0][2]
                 # 4 - Vehicle number after the first ICV
@@ -274,10 +285,12 @@ class ICV_Controller:
                     self.ICV_resume(first_ICV_ID)
 
     def ICV_stop(self, vehID):
-        self.stop_vehs.append(vehID)
+        # self.stop_vehs.append(vehID) put into the buffer stop
         lane_ID = traci.vehicle.getLaneID(vehID)
         edgeID, laneIndex = lane_ID.split("_")
-        traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
+        # change the method of stopping
+        self.buffer_stop(vid=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
+        # traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
         # 189. is a magic number. If there is two-lane for junction arm, 11.m prevent vehicle from entering junction
 
     def ICV_resume(self, vehID):
@@ -287,7 +300,37 @@ class ICV_Controller:
         else:
             traci.vehicle.setSpeed(vehID, -1)
 
-    # def test_ICV_stop(self):
+
+    def can_stop(self, vid):
+        turnVelocity = 0
+        nowSpeed = traci.vehicle.getSpeed(vid)
+        lanePostion = traci.vehicle.getLanePosition(vid)
+        remainder_min = np.abs((nowSpeed * nowSpeed - turnVelocity * turnVelocity) / (2 * traci.vehicle.getDecel(vid)))
+        remainder = 189 - lanePostion
+        if remainder_min < remainder:
+            return True
+        else:
+            return False
+
+    def buffer_stop(self, vid, edgeID, pos, laneIndex):
+        turnVelocity = 0
+        nowSpeed = traci.vehicle.getSpeed(vid)
+        lanePostion = traci.vehicle.getLanePosition(vid)
+        remainder_min = np.abs((nowSpeed * nowSpeed - turnVelocity * turnVelocity) / (2 * traci.vehicle.getDecel(vid)))
+        remainder = pos - lanePostion
+        if remainder_min < remainder:
+            expectedA = np.abs((nowSpeed * nowSpeed - turnVelocity * turnVelocity) / (2 * remainder))
+            time_interval = np.abs(nowSpeed - turnVelocity) / expectedA
+            # traci.vehicle.slowDown(vid, turnVelocity, time_interval)
+            try:
+                traci.vehicle.setStop(vid, edgeID, pos, laneIndex=laneIndex)
+                self.stop_vehs.append(vid)
+            except:
+                pass
+        else:
+            pass
+
+        # def test_ICV_stop(self):
     #     for key in ICV_in_lane.keys():
     #         if ICV_in_lane[key]:
     #             ICV_info = ICV_in_lane[key][0]  # The first ICV in current Lane

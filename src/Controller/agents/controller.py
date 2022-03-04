@@ -3,6 +3,9 @@ import numpy
 import torch
 from utils import get_param_or_default
 from utils import pad_or_truncate_sequences
+from GAT.utils import *
+from const import const_var
+from torch.autograd import Variable
 
 
 class ReplayMemory:
@@ -37,7 +40,7 @@ class Controller:
 
     def __init__(self, params):
         self.nr_actions = params["num_actions"]
-        self.input_shape = [8, 5]
+        self.input_shape = [8, 2]
         self.actions = list(range(self.nr_actions))
         self.randomized_adversary_ratio = False
         self.gamma = params["gamma"]
@@ -55,9 +58,10 @@ class DeepLearningController(Controller):
 
     def __init__(self, params):
         super(DeepLearningController, self).__init__(params)
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cpu")
         print(self.device)
+        self.params = params
         self.use_global_reward = get_param_or_default(params, "use_global_reward", True)
         self.memory = ReplayMemory(params["memory_capacity"])
         self.warmup_phase = params["warmup_phase"]
@@ -65,11 +69,22 @@ class DeepLearningController(Controller):
         self.max_history_length = get_param_or_default(params, "max_history_length", 1)
         self.target_update_period = params["target_update_period"]
         self.epsilon = 1
+        self.epsilon_decay = 1.0/200
+        self.epsilon_min = 0.01
         self.training_count = 0
         self.current_histories = []
         self.eps = numpy.finfo(numpy.float32).eps.item()
         self.policy_net = None
         self.target_net = None
+        self.summary = None
+        self.loss_num = 0
+
+        adj = const_var.lane_adjacent
+        adj = normalize_adj(adj + np.eye(adj.shape[0]))
+        adj = torch.FloatTensor(adj)
+        if torch.cuda.is_available():
+            adj = adj.cuda()
+        self.adj = Variable(adj)
 
     def save_weights(self, path):
         if self.policy_net is not None:
@@ -82,7 +97,7 @@ class DeepLearningController(Controller):
     def policy(self, observations, adj, training_mode=True):
         self.current_histories = observations
         action_probs = self.joint_action_probs(self.current_histories, adj, training_mode)
-        action = action_probs
+        action = np.copy(action_probs)
         action[action > 0.5] = 1
         action[action <= 0.5] = 0
         return action
@@ -96,7 +111,7 @@ class DeepLearningController(Controller):
 
     def update_transition(self, last_state, last_action, reward, state):
         self.warmup_phase = max(0, self.warmup_phase - 1)
-        pro_probs = self.joint_action_probs(last_state, training_mode=True)
+        pro_probs = self.joint_action_probs(last_state, self.adj, training_mode=True)
         self.memory.save((last_state, last_action, pro_probs, reward, state))
         return True
 

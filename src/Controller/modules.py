@@ -45,7 +45,7 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         self.input_shape = input_shape
         # self.nr_input_features = numpy.prod(self.input_shape)*max_sequence_length
-        self.nr_input_features = 40
+        self.nr_input_features = 16
         self.max_sequence_length = max_sequence_length
         self.nr_hidden_units = nr_hidden_units
         if max_sequence_length > 1:
@@ -58,7 +58,7 @@ class MLP(nn.Module):
         )
 
     def forward(self, x):
-        x = x.view(-1, 40)
+        x = x.view(-1, 16)
         # sequence_length = x.size(0)
         # batch_size = x.size(1)
         # assert self.max_sequence_length == sequence_length, "Got shape: {}".format(x.size())

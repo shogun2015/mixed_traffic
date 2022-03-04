@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/src/Controller")
 import algorithm as algorithm
 import experiments as experiments
 import data as data
@@ -18,6 +20,9 @@ def parse_args():
     parser.add_argument("--reload", action="store_true", default=False, help="reload the model")
     parser.add_argument("--reload_exp", type=str, default=None, help="The reload exp name")
     parser.add_argument("--test", action="store_true", default=False, help="Test")
+    parser.add_argument("--control_interval", type=int, default=5, help="The control interval ")
+    parser.add_argument("--gui", action="store_true", default=False, help="Visible")
+    parser.add_argument("--port", type=int, default=8813, help="The port of gui")
     return parser.parse_args()
 
 
@@ -29,6 +34,9 @@ params["reload_exp"] = args.reload_exp
 params["algorithm_name"] = args.alg_name
 params["test"] = args.test
 params["gamma"] = 0.99
+params["control_interval"] = args.control_interval
+params["gui"] = args.gui
+params["port"] = args.port
 
 
 addInformation = ""

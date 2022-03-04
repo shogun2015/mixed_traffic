@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/src/GAT")
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,11 +20,11 @@ class GAT(nn.Module):
 
     def forward(self, x, adj):
         x = F.dropout(x, self.dropout, training=self.training)
-        x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
+        x = torch.cat([att(x, adj) for att in self.attentions], dim=-1)
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
-        # return F.log_softmax(x, dim=1)
-        return F.softmax(x, dim=1)
+        return F.log_softmax(x, dim=-1)
+        # return F.softmax(x, dim=1)
 
 
 class SpGAT(nn.Module):

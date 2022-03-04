@@ -24,19 +24,40 @@ class GraphAttentionLayer(nn.Module):
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
     def forward(self, h, adj):
-        Wh = torch.mm(h, self.W) # h.shape: (N, in_features), Wh.shape: (N, out_features)
-        e = self._prepare_attentional_mechanism_input(Wh)
+        if len(h.size())==2:
+            Wh = torch.mm(h, self.W) # h.shape: (N, in_features), Wh.shape: (N, out_features)
+            e = self._prepare_attentional_mechanism_input(Wh)
 
-        zero_vec = -9e15*torch.ones_like(e)
-        attention = torch.where(adj > 0, e, zero_vec)
-        attention = F.softmax(attention, dim=1)
-        attention = F.dropout(attention, self.dropout, training=self.training)
-        h_prime = torch.matmul(attention, Wh)
+            zero_vec = -9e15*torch.ones_like(e)
+            attention = torch.where(adj > 0, e, zero_vec)
+            attention = F.softmax(attention, dim=1)
+            attention = F.dropout(attention, self.dropout, training=self.training)
+            h_prime = torch.matmul(attention, Wh)
 
-        if self.concat:
-            return F.elu(h_prime)
+            if self.concat:
+                return F.elu(h_prime)
+            else:
+                return h_prime
         else:
-            return h_prime
+            b, t, e = h.size()
+            return_res = []
+            for i in range(b):
+                h_ = h[i]
+                Wh = torch.mm(h_, self.W)  # h.shape: (N, in_features), Wh.shape: (N, out_features)
+                e = self._prepare_attentional_mechanism_input(Wh)
+
+                zero_vec = -9e15 * torch.ones_like(e)
+                attention = torch.where(adj > 0, e, zero_vec)
+                attention = F.softmax(attention, dim=1)
+                attention = F.dropout(attention, self.dropout, training=self.training)
+                h_prime = torch.matmul(attention, Wh)
+                if self.concat:
+                    return_res.append(F.elu(h_prime))
+                else:
+                    return_res.append(h_prime)
+            return_res = torch.cat(return_res, 0)
+            return_res = return_res.view(b, -1, return_res.size()[-1])
+            return return_res.to("cuda")
 
     def _prepare_attentional_mechanism_input(self, Wh):
         # Wh.shape (N, out_feature)
