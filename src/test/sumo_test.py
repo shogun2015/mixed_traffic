@@ -3,9 +3,11 @@ import logging
 import subprocess
 import sys
 
+import numpy as np
 import traci
+from src.const import const_var
 
-EPOCH = 500
+EPOCH = 7000
 
 
 def simulation_start():
@@ -26,12 +28,6 @@ def simulation_start():
 
     return sumoProcess
 
-
-for it in range(50):
-    sumoProcess = simulation_start()
-    for sim_step in range(EPOCH):
-        traci.simulationStep()
-        if sim_step > EPOCH - 10:
-            traci.close()
-            sumoProcess.kill()
-            break
+simulation_start()
+for sim_step in range(EPOCH):
+    traci.simulationStep()

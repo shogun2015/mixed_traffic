@@ -7,7 +7,10 @@ class const_var:
     JUNCTION_ID = [":J_C_0_0", ":J_C_1_0", ":J_C_2_0", ":J_C_3_0",
                    ":J_C_4_0", ":J_C_5_0", ":J_C_6_0", ":J_C_7_0"]
 
-    LANE_LENGTH = 200
+    LANE_LENGTH = 189.6 # get from traci
+    VEH_LENGTH = 5
+    MAX_VEH_NUM_Lane = 25    # 25 is the actual num
+    MAX_VEH_NUM_Junction = 4    # 25 is the actual num
     STRAIGHT = 30.0
     LEFT_TURN = 48.0
     RIGHT_TURN = 23.0
@@ -21,6 +24,17 @@ class const_var:
         ":J_C_5_0": "d_1",
         ":J_C_6_0": "l_0",
         ":J_C_7_0": "l_1"
+    }
+
+    sourceLane_junction_map = {
+        "u_0": ":J_C_0_0",
+        "u_1": ":J_C_1_0",
+        "r_0": ":J_C_2_0",
+        "r_1": ":J_C_3_0",
+        "d_0": ":J_C_4_0",
+        "d_1": ":J_C_5_0",
+        "l_0": ":J_C_6_0",
+        "l_1": ":J_C_7_0"
     }
 
     '''

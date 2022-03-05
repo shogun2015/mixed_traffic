@@ -54,7 +54,7 @@ if __name__ == "__main__":
     static_veh_num_last_step = 0
 
     # GAT-related
-    nfeat = 5
+    nfeat = 6
     # feature:
     # 1 - Vehicle number in the corresponding junction lane
     # 2 - HDV number from the first ICV to stop line

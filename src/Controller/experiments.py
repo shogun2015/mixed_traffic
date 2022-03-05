@@ -91,7 +91,7 @@ def run(controller_rl, params, log_level=0):
             if sim_step % params["control_interval"] == 0:
                 # print("control step")
                 features, avg_speed_junction, static_veh_num, min_lane_num, max_lane_num, static_veh_in_junction = controller.feature_step(timestep=sim_step)
-                norm_feat = normalize_features(features)
+                # norm_feat = normalize_features(features)
 
                 # Reward: less static vehicles
                 reward = static_veh_num_last_step - static_veh_num
@@ -106,7 +106,8 @@ def run(controller_rl, params, log_level=0):
 
                 # Training the model
                 if sim_step > 0:
-                    policy_update = controller_rl.update(last_state, last_action, reward, norm_feat)
+                    # policy_update = controller_rl.update(last_state, last_action, reward, norm_feat)
+                    policy_update = controller_rl.update(last_state, last_action, reward, features)
 
                 # If average speed of vehicles in junction is too slow, the junction is deadlock.
                 # The simulation need to be reset
@@ -118,9 +119,11 @@ def run(controller_rl, params, log_level=0):
                     traci.close()
                     sumoProcess.kill()
                     break
-                action = controller_rl.policy(norm_feat, controller_rl.adj, training_mode=True)
+                # action = controller_rl.policy(norm_feat, controller_rl.adj, training_mode=True)
+                action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
                 last_action = action
-                last_state = norm_feat
+                # last_state = norm_feat
+                last_state = features
                 last_avg_speed = avg_speed_junction
                 controller.run_step(action)
 

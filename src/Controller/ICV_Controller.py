@@ -121,7 +121,9 @@ class ICV_Controller:
             veh_lane = self.getVehLane(vid)  # [laneID, LaneType]
             veh_lane_ID = veh_lane[0]
             veh_lane_Type = veh_lane[1]
-            veh_lane_pos = const_var.LANE_LENGTH - 10 - round(traci.vehicle.getLanePosition(vid))
+            veh_lane_pos = const_var.LANE_LENGTH - round(traci.vehicle.getLanePosition(vid))
+
+            veh_length = traci.vehicle.getLength(vid)
 
             # Classification by Lane ID
             if veh_lane_ID in const_var.LANE_ID:
@@ -149,11 +151,19 @@ class ICV_Controller:
                     self.lane_vehicle_num[const_var.LANE_ID.index(veh_lane_ID)] += 1
                 self.static_veh_num += 1
 
-        features = np.zeros(shape=[1, 5], dtype=int)  # a base row for adding more data
+        features = np.zeros(shape=[1, 6], dtype=int)  # a base row for adding more data
         for LaneID in vehs_in_lane.keys():
             # construct ICVs' info in lane (ICV_in_lane)
             for index, veh_info in enumerate(vehs_in_lane[LaneID]):
-                if veh_info[1] == "ICV":
+
+                # check if ICV can stop before stopline
+                speed = traci.vehicle.getSpeed(veh_info[0])
+                maxDecel = traci.vehicle.getDecel(veh_info[0]) # the maximal comfortable deceleration in m/s^2
+                dist_require = (-speed * speed) / (-2 * maxDecel)  # maxDecel is a positive number
+                dist2stop = veh_info[2]
+                stoppable = True if dist2stop > dist_require else False
+
+                if veh_info[1] == "ICV" and stoppable:
                     ICV_in_lane[LaneID].append(
                         [veh_info[0], veh_info[1], veh_info[2], index])  # [vid, ICV/HDV, dist2junction, front_veh_num]
             # construct feature for GAT (features)
@@ -169,21 +179,35 @@ class ICV_Controller:
                 feat_dist2stop = ICV_in_lane[LaneID][0][2]
                 # 4 - Vehicle number after the first ICV
                 feat_veh_num_after = len(vehs_in_lane[LaneID]) - ICV_in_lane[LaneID][0][3] - 1
+                # 4.5 - distance between 1st and 2nd ICV
+                if len(ICV_in_lane[LaneID]) > 1:
+                    feat_dist_between_ICV = ICV_in_lane[LaneID][1][2] - ICV_in_lane[LaneID][0][2]
+                else:
+                    feat_dist_between_ICV = const_var.LANE_LENGTH - feat_dist2stop
                 # 5 - HDV number from the first ICV and the second ICV
                 feat_HDV_num_between_ICV = ICV_in_lane[LaneID][1][3] - ICV_in_lane[LaneID][0][3] - 1 if len(
                     ICV_in_lane[LaneID]) > 1 else len(vehs_in_lane[LaneID]) - ICV_in_lane[LaneID][0][3]
-
             else:
                 feat_HDV_num_before = len(vehs_in_lane[LaneID])
-                feat_dist2stop = const_var.LANE_LENGTH - 10
+                feat_dist2stop = const_var.LANE_LENGTH
                 feat_veh_num_after = 0
+                feat_dist_between_ICV = 0
                 feat_HDV_num_between_ICV = 0
 
-            row = np.array([feat_veh_num_junction,
-                            feat_HDV_num_before,
-                            feat_dist2stop,
-                            feat_veh_num_after,
-                            feat_HDV_num_between_ICV])
+            # feature normalize
+            feat_veh_num_junction_norm = feat_veh_num_junction / const_var.MAX_VEH_NUM_Junction
+            feat_HDV_num_before_norm = feat_HDV_num_before / const_var.MAX_VEH_NUM_Lane
+            feat_dist2stop_norm = feat_dist2stop / const_var.LANE_LENGTH
+            feat_veh_num_after_norm = feat_veh_num_after/ const_var.MAX_VEH_NUM_Lane
+            feat_dist_between_ICV_norm = feat_dist_between_ICV / const_var.LANE_LENGTH
+            feat_HDV_num_between_ICV_norm = feat_HDV_num_between_ICV / const_var.MAX_VEH_NUM_Lane
+
+            row = np.array([feat_veh_num_junction_norm,
+                            feat_HDV_num_before_norm,
+                            feat_dist2stop_norm,
+                            feat_veh_num_after_norm,
+                            feat_dist_between_ICV_norm,
+                            feat_HDV_num_between_ICV_norm])
             features = np.row_stack([features, row])
         features = features[1:, :]  # remove the first row
         return features
@@ -289,9 +313,9 @@ class ICV_Controller:
         lane_ID = traci.vehicle.getLaneID(vehID)
         edgeID, laneIndex = lane_ID.split("_")
         # change the method of stopping
-        self.buffer_stop(vid=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
+        self.buffer_stop(vid=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 1., laneIndex=laneIndex)
         # traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
-        # 189. is a magic number. If there is two-lane for junction arm, 11.m prevent vehicle from entering junction
+        # If there is two-lane for junction arm, 1.m prevent vehicle from entering junction
 
     def ICV_resume(self, vehID):
         if traci.vehicle.getSpeed(vehID) == 0 and vehID in self.stop_vehs:

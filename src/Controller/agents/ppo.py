@@ -13,7 +13,7 @@ class PPONet(nn.Module):
     def __init__(self, input_shape, nr_actions, max_history_length, q_values=False):
         super(PPONet, self).__init__()
         # self.fc_net = MLP(input_shape, max_history_length)
-        self.fc_net = GAT(nfeat=5, nhid=8, nclass=2, dropout=0.6, nheads=8, alpha=0.2)
+        self.fc_net = GAT(nfeat=6, nhid=8, nclass=2, dropout=0.6, nheads=8, alpha=0.2)
         self.forward_net = MLP(input_shape, max_history_length)
         # self.action_head = nn.Linear(self.fc_net.nr_hidden_units, nr_actions)
         self.action_head = nn.Linear(64, nr_actions)
