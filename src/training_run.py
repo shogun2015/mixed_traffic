@@ -23,6 +23,8 @@ def parse_args():
     parser.add_argument("--control_interval", type=int, default=5, help="The control interval ")
     parser.add_argument("--gui", action="store_true", default=False, help="Visible")
     parser.add_argument("--port", type=int, default=8813, help="The port of gui")
+    parser.add_argument("--probability", type=float, default=0.01, help="The total probability of IDV and HDV")
+    parser.add_argument("--icv_ratio", type=float, default=0.00001, help="The ratio of icv/hdv")
     return parser.parse_args()
 
 
@@ -37,6 +39,9 @@ params["gamma"] = 0.99
 params["control_interval"] = args.control_interval
 params["gui"] = args.gui
 params["port"] = args.port
+params["probability"] = args.probability
+params["icv_ratio"] = args.icv_ratio
+params["exp_name"] = args.exp_name
 
 
 addInformation = ""
@@ -50,9 +55,9 @@ params["directory"] = "output/{}_{}".format(params["algorithm_name"], addInforma
 controller = algorithm.make(params["algorithm_name"], params)
 
 if params["reload"]:
-    params["reload_exp"] = join("output", params["reload_exp"], "best.pth")
+    params["reload_exp"] = join("output", params["reload_exp"], "protagonist_model.pth")
     if os.path.exists(params["reload_exp"]):
-        controller.load_weights_from_history(params["reload_exp"])
+        controller.load_weights(params["reload_exp"])
         print("Load model success")
     else:
         print("Not found model")

@@ -92,7 +92,7 @@ class DeepLearningController(Controller):
 
     def load_weights(self, path):
         if self.policy_net is not None:
-            self.policy_net.load_weights(path)
+            self.policy_net.load_weights_from_history(path)
 
     def policy(self, observations, adj, training_mode=True):
         self.current_histories = observations

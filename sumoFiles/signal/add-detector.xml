@@ -1,21 +1,21 @@
 <additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
     <e1Detector id="di_0" lane="d_0" pos="50.00" freq="900.00" file="out-detector.xml"/>
     <e1Detector id="di_1" lane="d_1" pos="50.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="do_0" lane="-d_0" pos="150.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="do_1" lane="-d_1" pos="150.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="do_0" lane="-d_0" pos="10.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="do_1" lane="-d_1" pos="10.00" freq="900.00" file="out-detector.xml"/>
 
     <e1Detector id="ui_0" lane="u_0" pos="50.00" freq="900.00" file="out-detector.xml"/>
     <e1Detector id="ui_1" lane="u_1" pos="50.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="uo_0" lane="-u_0" pos="150.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="uo_1" lane="-u_1" pos="150.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="uo_0" lane="-u_0" pos="10.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="uo_1" lane="-u_1" pos="10.00" freq="900.00" file="out-detector.xml"/>
 
     <e1Detector id="ri_0" lane="r_0" pos="50.00" freq="900.00" file="out-detector.xml"/>
     <e1Detector id="ri_1" lane="r_1" pos="50.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="ro_0" lane="-r_0" pos="150.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="ro_1" lane="-r_1" pos="150.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="ro_0" lane="-r_0" pos="10.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="ro_1" lane="-r_1" pos="10.00" freq="900.00" file="out-detector.xml"/>
 
     <e1Detector id="li_0" lane="l_0" pos="50.00" freq="900.00" file="out-detector.xml"/>
     <e1Detector id="li_1" lane="l_1" pos="50.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="lo_0" lane="-l_0" pos="150.00" freq="900.00" file="out-detector.xml"/>
-    <e1Detector id="lo_1" lane="-l_1" pos="150.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="lo_0" lane="-l_0" pos="10.00" freq="900.00" file="out-detector.xml"/>
+    <e1Detector id="lo_1" lane="-l_1" pos="10.00" freq="900.00" file="out-detector.xml"/>
 </additional>
