@@ -72,11 +72,12 @@ def collectTraveTime(time_step):
 
 
 def simulation_start():
-    auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.sumocfg"
+    # auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/2way-single-intersection/single-intersection.sumocfg"
+    auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/Trafficsignal/TLS.sumocfg"
     # sumoProcess = subprocess.Popen([sumoBinary, "-c", auto_cfg_filepath, "--remote-port", str(PORT), "--start"],
     #                                stdout=sys.stdout, stderr=sys.stderr)
 
-    sumoProcess = subprocess.Popen([sumoBinary_w_gui, "-c", auto_cfg_filepath, "--remote-port", str(PORT)],
+    sumoProcess = subprocess.Popen([sumoBinary_w_gui, "-c", auto_cfg_filepath, "--remote-port", str(PORT), "--start"],
                                    stdout=sys.stdout, stderr=sys.stderr)
 
     logging.info("start SUMO GUI.")
@@ -91,14 +92,19 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logging.info("simulation start...")
 
-    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
+    # tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/2way-single-intersection/single-intersection.rou.xml"
+    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/Trafficsignal/TLS.rou.xml"
     # alterDemand(tls_rou_path, 0.01, 1)
     sumoProcess = simulation_start()
 
     for sim_step in range(EPOCH):
         traci.simulationStep()
-        collectTraveTime(sim_step)
+        # collectTraveTime(sim_step)
         vids = traci.vehicle.getIDList()
+        signal_id = traci.trafficlight.getIDList()
+        duration = traci.trafficlight.getPhaseDuration(signal_id[0])
+        state = traci.trafficlight.getRedYellowGreenState(signal_id[0])
+        phases = traci.trafficlight.getAllProgramLogics(signal_id[0])[0].phases
         for vid in vids:
             speed = traci.vehicle.getSpeed(vid)
             maxSpeed = traci.vehicle.getMaxSpeed(vid)

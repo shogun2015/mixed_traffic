@@ -204,19 +204,16 @@ def test(controller_rl, params, log_level=0):
     tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
     # probability = np.random.choice(probability_list)
     # icv_ratio = np.random.choice(ICV_ratios)
-    alterDemand(tls_rou_path, params["probability"], params["icv_ratio"])
-    for episode in range(1):
+    testNum = len(probability_list) * len(ICV_ratios)
+
+    for episode in range(testNum):
+        # alterDemand(tls_rou_path, probability_list[int(episode/len(probability_list))], ICV_ratios[episode % len(ICV_ratios)])
+        alterDemand(tls_rou_path, 0.05, 0.1)
         logging.info("The %s th episode simulation start..." % (episode))
         sumoProcess = simulation_start(params)
         controller = ICV_Controller()
         # simulation environment related
-        static_veh_num = 0
-        static_veh_num_last_step = 0
-        static_veh_in_junction_last = 0
-        # last_avg_speed = 10
-        exit_vehicle_num_sum = 0
-        summary_rewards = []
-        action_init = [0 for _ in range(8)]
+        # action_init = [0 for _ in range(8)]
         for sim_step in range(EPOCH):
             traci.simulationStep()
             # print(sim_step)
@@ -230,50 +227,18 @@ def test(controller_rl, params, log_level=0):
             """
             features, static_veh_num, is_all_static_junction, min_lane_num, max_lane_num, exit_vehicle_num \
                 = controller.feature_step(timestep=sim_step)
-            exit_vehicle_num_sum += exit_vehicle_num
-            if sim_step % 5 == 0:
-                # print("control step")
-                # features, avg_speed_junction, static_veh_num, min_lane_num, max_lane_num, static_veh_in_junction = controller.feature_step(
-                #     timestep=sim_step)
-                # norm_feat = normalize_features(features)
-
-                # Reward: less static vehicles
-                reward = static_veh_num_last_step - static_veh_num
-                reward += -10 if is_all_static_junction is True else 0
-                reward += min_lane_num - max_lane_num
-                reward += exit_vehicle_num_sum
-                # reward += (5 - max_lane_num) / 25
-                summary_rewards.append(reward)
-
-                static_veh_num_last_step = static_veh_num
-                exit_vehicle_num_sum = 0
-
-                # If average speed of vehicles in junction is too slow, the junction is deadlock.
-                # The simulation need to be reset
-                # if (avg_speed_junction < 0.1 and last_avg_speed < 0.1) or sim_step > EPOCH - 100 or min_lane_num >= 3 or max_lane_num >= 20:
-                if sim_step > EPOCH - 10 or is_all_static_junction or min_lane_num > 5 or max_lane_num > 20:
-                    # print("reset - avg_speed_junction: %s" % avg_speed_junction)
-                    # print(" sim_step：%s" % sim_step)
-                    # print(" min_lane_num：%s" % min_lane_num)
-                    # print(" max_lane_num：%s" % max_lane_num)
-                    traci.close()
-                    sumoProcess.kill()
-                    data = controller.travelTimeDict
-                    process_data(data, params, episode)
-                    break
-
+            # exit_vehicle_num_sum += exit_vehicle_num
+            if sim_step % 50 == 0:
                 if params["reload"]:
                     action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
                     action_init = action
                     controller.run_step(action)
 
-                # last_avg_speed = avg_speed_junction
-
-            input_action = action_init
-            controller.run_step(input_action)
+            # input_action = action_init
+            # controller.run_step(input_action)
+            # print(input_action)
     log(log_level, 0, "DONE")
-    return_values = {
-    }
+    return_values = {}
     # data.save_json(join(path, "returns.json"), return_values)
     # controller_rl.save_weights(path)
     return return_values

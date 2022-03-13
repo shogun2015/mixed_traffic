@@ -2,14 +2,11 @@ import sys
 sys.path.append("/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/src/Controller")
 import algorithm as algorithm
 import experiments as experiments
-import data as data
-import utils as utils
-import sys
 import os
 from os.path import join
-from settings import params, nr_steps
+from settings import params
 import argparse
-import numpy
+import time
 
 
 def parse_args():
@@ -43,15 +40,13 @@ params["probability"] = args.probability
 params["icv_ratio"] = args.icv_ratio
 params["exp_name"] = args.exp_name
 
-
+date_str = time.strftime("%m-%d")
 addInformation = ""
-
-addInformation += "batch_size-%s" % params["batch_size"]
-
+addInformation += "batch_%s" % params["batch_size"]
+addInformation += "_"
 addInformation += args.exp_name
 
-params["directory"] = "output/{}_{}".format(params["algorithm_name"], addInformation)
-
+params["directory"] = "output/{}/{}".format(date_str, addInformation)
 controller = algorithm.make(params["algorithm_name"], params)
 
 if params["reload"]:

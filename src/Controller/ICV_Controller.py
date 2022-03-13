@@ -97,7 +97,7 @@ class ICV_Controller:
         self.time_step = 0
         self.static_veh_num = 0
         self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
-        self.stop_vehs = list()  # The veh which is stoping (Receive the stop commend)
+        # self.stop_vehs = list()  # The veh which is stoping (Receive the stop commend)
         self.veh_speed_junction = list()  # vehicles' speed list in junction
 
         # For record enter and exit time
@@ -365,7 +365,7 @@ class ICV_Controller:
 
     def data_clear_step(self):
         self.vehicles_info.clear()
-        self.stop_vehs.clear()
+        # self.stop_vehs.clear()
         self.veh_speed_junction.clear()
         self.static_veh_num = 0
         for key in veh_num_in_Junction.keys():
@@ -390,18 +390,22 @@ class ICV_Controller:
                     self.ICV_resume(first_ICV_ID)
 
     def ICV_stop(self, vehID):
-        # self.stop_vehs.append(vehID) put into the buffer stop
+        # self.stop_vehs.append(vehID) # put into the buffer stop
         lane_ID = traci.vehicle.getLaneID(vehID)
         edgeID, laneIndex = lane_ID.split("_")
         # change the method of stopping
-        self.buffer_stop(vid=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 1., laneIndex=laneIndex)
+        self.buffer_stop(vid=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 2., laneIndex=laneIndex)
         # traci.vehicle.setStop(vehID=vehID, edgeID=edgeID, pos=const_var.LANE_LENGTH - 11., laneIndex=laneIndex)
         # If there is two-lane for junction arm, 1.m prevent vehicle from entering junction
 
     def ICV_resume(self, vehID):
-        if traci.vehicle.getSpeed(vehID) == 0 and vehID in self.stop_vehs:
+        stopData = traci.vehicle.getStopState(vehID)
+        # print("ICV_resume-{}:{}".format(vehID, bin(stopData)))
+        # speed = traci.vehicle.getSpeed(vehID)
+        # if speed < 0.1 and vehID in self.stop_vehs:
+        if stopData & 1 > 0:    # 判断编制为最后1位为1,即为停止状态
             traci.vehicle.resume(vehID)
-            self.stop_vehs.remove(vehID)
+            # self.stop_vehs.remove(vehID)
         else:
             traci.vehicle.setSpeed(vehID, -1)
 
@@ -410,7 +414,7 @@ class ICV_Controller:
         nowSpeed = traci.vehicle.getSpeed(vid)
         lanePostion = traci.vehicle.getLanePosition(vid)
         remainder_min = np.abs((nowSpeed * nowSpeed - turnVelocity * turnVelocity) / (2 * traci.vehicle.getDecel(vid)))
-        remainder = 189 - lanePostion
+        remainder = 188.6 - lanePostion
         if remainder_min < remainder:
             return True
         else:
@@ -428,7 +432,7 @@ class ICV_Controller:
             # traci.vehicle.slowDown(vid, turnVelocity, time_interval)
             try:
                 traci.vehicle.setStop(vid, edgeID, pos, laneIndex=laneIndex)
-                self.stop_vehs.append(vid)
+                # self.stop_vehs.append(vid)
             except:
                 pass
         else:
