@@ -42,8 +42,8 @@ params["exp_name"] = args.exp_name
 
 date_str = time.strftime("%m-%d")
 addInformation = ""
-addInformation += "batch_%s" % params["batch_size"]
-addInformation += "_"
+# addInformation += "batch_%s" % params["batch_size"]
+# addInformation += "_"
 addInformation += args.exp_name
 
 params["directory"] = "output/{}/{}".format(date_str, addInformation)
