@@ -33,14 +33,14 @@ class const_var:
     timestep:4011 	 vid:DToL_HDV.11 	 travel_time:13.54073123891169
     """
 
-    ThroughTime = { "UToD": 10,
-                    "DToU": 10,
-                    "LToR": 10,
-                    "RToL": 10,
-                    "UToR": 10,
-                    "DToL": 10,
-                    "LToU": 10,
-                    "RToD": 10}
+    ThroughTime = { "UToD": 12,
+                    "DToU": 12,
+                    "LToR": 12,
+                    "RToL": 12,
+                    "UToR": 12,
+                    "DToL": 12,
+                    "LToU": 12,
+                    "RToD": 12}
 
     LANE_LENGTH = 189.6  # get from traci
     JUNCTION_LENGTH = 20
