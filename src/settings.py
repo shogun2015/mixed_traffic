@@ -6,6 +6,7 @@ params["save_summaries"] = True
 params["save_test_summaries"] = True
 params["alpha"] = 0.001
 params["Episode"] = 10000
+# params["input_shape"] = [,]
 params["num_actions"] = 8
 # params["num_actions"] = 256 # 2^8
 

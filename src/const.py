@@ -45,9 +45,13 @@ class const_var:
     LANE_LENGTH = 189.6  # get from traci
     JUNCTION_LENGTH = 20
     VEH_LENGTH = 5
+    MINI_GAP = 2
+    CELL_SIZE = VEH_LENGTH + MINI_GAP
 
-    CELL_NUM_JUNCTION = 4
-    CELL_NUM_LANE = 38
+    # CELL_NUM_JUNCTION = 4     # 20 // 5
+    # CELL_NUM_LANE = 38        # 190 // 5
+    CELL_NUM_JUNCTION = 3       # 20 // 7
+    CELL_NUM_LANE = 28          # 190 // 7
 
     STRAIGHT = 30.0
     LEFT_TURN = 48.0
@@ -90,22 +94,22 @@ class const_var:
         LS              
                     DL  DS
         ====================================    
-            US  UL  RS  RL  DS  DL  LL  LS
+            US  UL  RS  RL  DS  DL  LS  LL
         US  o   o   x   o   o   x   x   x
-        UL  o   o   x   x   x   o   x   o
-        RS  x   x   o   o   x   o   x   o
-        RL  o   x   o   o   x   x   o   x
-        DS  o   x   x   x   o   o   o   x
+        UL  o   o   x   x   x   o   o   x
+        RS  x   x   o   o   x   o   o   x
+        RL  o   x   o   o   x   x   x   0
+        DS  o   x   x   x   o   o   x   o
         DL  x   o   o   x   o   o   x   x
-        LL  x   x   x   o   o   x   o   o
         LS  x   o   o   x   x   x   o   o
+        LL  x   x   x   o   o   x   o   o
     '''
 
     lane_adjacent = np.array([[0, 0, 1, 0, 0, 1, 1, 1],
-                              [0, 0, 1, 1, 1, 0, 1, 0],
-                              [1, 1, 0, 0, 1, 0, 1, 0],
-                              [0, 1, 0, 0, 1, 1, 0, 1],
-                              [0, 1, 1, 1, 0, 0, 0, 1],
+                              [0, 0, 1, 1, 1, 0, 0, 1],
+                              [1, 1, 0, 0, 1, 0, 0, 1],
+                              [0, 1, 0, 0, 1, 1, 1, 0],
+                              [0, 1, 1, 1, 0, 0, 1, 0],
                               [1, 0, 0, 1, 0, 0, 1, 1],
-                              [1, 1, 1, 0, 0, 1, 0, 0],
-                              [1, 0, 0, 1, 1, 1, 0, 0]], dtype=int)
+                              [1, 0, 0, 1, 1, 1, 0, 0],
+                              [1, 1, 1, 0, 0, 1, 0, 0]], dtype=int)

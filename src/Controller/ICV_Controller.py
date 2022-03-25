@@ -98,13 +98,15 @@ class ICV_Controller:
         self.static_veh_num = 0
         self.vehicles_info = dict()  # {vehicleID, [laneID, LaneType, LanePos]}
         # self.stop_vehs = list()  # The veh which is stoping (Receive the stop commend)
-        self.veh_speed_junction = list()  # vehicles' speed list in junction
+        self.veh_speed_junction = dict()  # vehicles' speed list in junction
 
         # For record enter and exit time
         self.travelTimeDict = dict()  # {vehicleID, {enterTime, exitTime}}
         self.in_loop = ['ui_0', 'ui_1', 'di_0', 'di_1', 'ri_0', 'ri_1', 'li_0', 'li_1']
         self.exit_loop = ['uo_0', 'uo_1', 'do_0', 'do_1', 'ro_0', 'ro_1', 'lo_0', 'lo_1']
         self.lane_vehicle_num = [0 for _ in range(8)]
+
+        self.travel_time = dict()
 
     def __str__(self):
         return "ICV Controller"
@@ -114,12 +116,8 @@ class ICV_Controller:
         self.data_clear_step()
         feature = self._get_vehicles_info()
 
-        if len(self.veh_speed_junction) > 0:
-            is_all_static_junction = max(self.veh_speed_junction) < 0.01
-        else:
-            is_all_static_junction = False
-
         exit_vehicle_num = self.collect_exit_vehicle_num()
+        self._collectTraveTime()
         """
         feature - 特征矩阵
         self.static_veh_num - 静止车数目
@@ -127,8 +125,7 @@ class ICV_Controller:
         min(self.lane_static_veh_num) - 静止车辆最多车道的车辆数
         max(self.lane_static_veh_num) - 静止车辆最少车道的车辆数
         """
-        return feature, self.static_veh_num, is_all_static_junction, min(self.lane_static_veh_num), max(
-            self.lane_static_veh_num), exit_vehicle_num
+        return feature, self.static_veh_num, self.lane_static_veh_num, exit_vehicle_num, self.travel_time
 
     def run_step(self, GAT_actions):
         self.ICV_control(GAT_actions)
@@ -177,7 +174,7 @@ class ICV_Controller:
                             break
                 else:
                     vehs_in_junction[veh_lane_ID].insert(0, [vid, veh_type, veh_lane_pos])
-                self.veh_speed_junction.append(traci.vehicle.getSpeed(vid))
+                self.veh_speed_junction[vid] = traci.vehicle.getSpeed(vid)
             else:
                 # ignore exit lane
                 pass
@@ -190,8 +187,8 @@ class ICV_Controller:
         # a base row for adding more data
         features = np.append(np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=int),
                              np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=float))
-        # features = np.zeros(shape=[1, 2 * (const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_JUNCTION)],
-        #                     dtype=int)  # a base row for adding more data
+        # features = np.append(np.zeros(const_var.CELL_NUM_LANE, dtype=int), np.zeros(const_var.CELL_NUM_LANE, dtype=float))
+
         for LaneID in vehs_in_lane.keys():
             # construct ICVs' info in lane (ICV_in_lane)
             for index, veh_info in enumerate(vehs_in_lane[LaneID]):
@@ -255,28 +252,32 @@ class ICV_Controller:
                             feat_dist_between_ICV_norm,
                             feat_HDV_num_between_ICV_norm])
             """
-            # cell_array = np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=int)
-            # cell_speed_array = np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=float)
             cell_array = -1 * np.ones(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=int)
             cell_speed_array = -1 * np.ones(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=float)
+            # cell_array = -1 * np.ones(const_var.CELL_NUM_LANE, dtype=int)
+            # cell_speed_array = -1 * np.ones(const_var.CELL_NUM_LANE, dtype=float)
             junction_lane_ID = const_var.sourceLane_junction_map[LaneID]
             for index, veh_info in enumerate(vehs_in_junction[junction_lane_ID]):
-                cell_index = int(veh_info[2] // const_var.VEH_LENGTH)
+                cell_index = int(veh_info[2] // const_var.CELL_SIZE)
                 speed = traci.vehicle.getSpeed(veh_info[0])
                 cell_array[cell_index] = const_var.VehType.HDV
                 cell_speed_array[cell_index] = speed / 16
 
             for index, veh_info in enumerate(ICV_in_lane[LaneID]):
-                cell_index = int(veh_info[2] // const_var.VEH_LENGTH)
+                cell_index = int(veh_info[2] // const_var.CELL_SIZE)
                 speed = traci.vehicle.getSpeed(veh_info[0])
                 cell_array[const_var.CELL_NUM_JUNCTION + cell_index] = const_var.VehType.ICV
                 cell_speed_array[const_var.CELL_NUM_JUNCTION + cell_index] = speed / 16
+                # cell_array[cell_index] = const_var.VehType.ICV
+                # cell_speed_array[cell_index] = speed / 16
 
             for index, veh_info in enumerate(HDV_in_lane[LaneID]):
-                cell_index = int(veh_info[2] // const_var.VEH_LENGTH)
+                cell_index = int(veh_info[2] // const_var.CELL_SIZE)
                 speed = traci.vehicle.getSpeed(veh_info[0])
                 cell_array[const_var.CELL_NUM_JUNCTION + cell_index] = const_var.VehType.HDV
                 cell_speed_array[const_var.CELL_NUM_JUNCTION + cell_index] = speed / 16
+                # cell_array[cell_index] = const_var.VehType.HDV
+                # cell_speed_array[cell_index] = speed / 16
 
             row = np.append(cell_array, cell_speed_array)
             features = np.row_stack([features, row])
@@ -326,7 +327,6 @@ class ICV_Controller:
             return [traci.vehicle.getLaneID(vid), LaneType.Entering]
         elif traci.vehicle.getLaneID(vid) in const_var.JUNCTION_ID:
             # vehicle in merging area
-            # return [self.junction_sourceLane_map[traci.vehicle.getLaneID(vid)], LaneType.inJunction]
             return [traci.vehicle.getLaneID(vid), LaneType.inJunction]
         else:
             # vehicle on exiting lane
@@ -353,9 +353,8 @@ class ICV_Controller:
                 exit_time = vehData[3]
                 if exit_time != -1.0 and veh_id in list(self.travelTimeDict.keys()):
                     self.travelTimeDict[veh_id].add_exit_time(exit_time)
-                    # print("timestep:{} \t vid:{} \t travel_time:{}".format(self.time_step, veh_id,
-                    #                                                        self.travelTimeDict[veh_id].exit_time -
-                    #                                                        self.travelTimeDict[veh_id].entry_time))
+                    self.travel_time[veh_id] = self.travelTimeDict[veh_id].exit_time \
+                                               - self.travelTimeDict[veh_id].entry_time
 
     def collect_exit_vehicle_num(self):
         exit_vehicle_num = 0

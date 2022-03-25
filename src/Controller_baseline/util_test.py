@@ -66,12 +66,7 @@ class util_test:
 
         self.collectTraveTime()
 
-        if len(self.veh_speed_junction) > 0:
-            is_all_static_junction = max(self.veh_speed_junction) < 0.01
-        else:
-            is_all_static_junction = False
-
-        return first_ICVs, self.travel_time, self.lane_static_veh_num, is_all_static_junction
+        return first_ICVs, self.travel_time, self.lane_static_veh_num
 
     def data_clear_step(self):
         self.veh_speed_junction.clear()

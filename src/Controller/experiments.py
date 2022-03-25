@@ -19,7 +19,7 @@ from const import const_var
 from torch.autograd import Variable
 from alterXML import *
 
-probability_list = [0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
+probability_list = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
 ICV_ratios = [0.1, 0.2, 0.3, 0.4, 0.5, 1]
 
 
@@ -65,20 +65,21 @@ def process_data(data, params, episode, type="test", summary=None):
     # csv_writer.writerow(["Episode", "ThroughTimeDelta", "ThroughPassRatio"])
     vid_keys = data.keys()
     deltaTime = []
-    notpassVheNums = 0
+    passVheNums = 0
     for vid in vid_keys:
         times = data[vid]
         if times.exit_time != 0:
             lane = vid.split("_")[0]
             throughTimeDelta = times.exit_time - times.entry_time - ThroughTime_ori[lane]
             deltaTime.append(throughTimeDelta)
-        else:
-            notpassVheNums += 1
+            passVheNums += 1
     totalVeh = len(vid_keys)
-    csv_writer.writerow([episode, np.mean(deltaTime), notpassVheNums / totalVeh])
+    if totalVeh == 0:
+        print("0 total vehicle")
+    csv_writer.writerow([episode, np.mean(deltaTime), passVheNums / totalVeh])
     if type == "train":
         summary.add_scalar('delatTime', np.mean(deltaTime), episode)
-        summary.add_scalar('passRatio', notpassVheNums / totalVeh, episode)
+        summary.add_scalar('passRatio', passVheNums / totalVeh, episode)
 
 
 def run(controller_rl, params, log_level=0):
@@ -87,7 +88,7 @@ def run(controller_rl, params, log_level=0):
     controller_rl.summary = summary_write
 
     # simulation step
-    EPOCH = 7200
+    EPOCH = 10000
     logging.basicConfig(level=logging.INFO)
 
     adj = const_var.lane_adjacent
@@ -98,6 +99,8 @@ def run(controller_rl, params, log_level=0):
     adj = Variable(adj)
 
     tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
+    best_deltaTime = np.inf
+    best_deltaNum = np.inf
     for episode in range(params["Episode"]):
         logging.info("The %s th episode simulation start..." % (episode))
         probability = np.random.choice(probability_list)
@@ -120,24 +123,26 @@ def run(controller_rl, params, log_level=0):
             """
             feature - 特征矩阵
             static_veh_num - 静止车数目
-            is_all_static_junction - 路口内是否全为静止车
+            is_all_static_junction - 路口内是否全为静止车(弃用)
             min_lane_num - 静止车辆最多车道的车辆数
             max_lane_num - 静止车辆最少车道的车辆数
             exit_vehicle_num  - 离开车辆的数目
             """
-            features, static_veh_num, is_all_static_junction, min_lane_num, max_lane_num, exit_vehicle_num \
-                = controller.feature_step(timestep=sim_step)
+            features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time = controller.feature_step(timestep=sim_step)
             exit_vehicle_num_sum += exit_vehicle_num
-            # print("exit sum:{}, eixt:{}".format(exit_vehicle_num_sum, exit_vehicle_num))
+
+            min_lane_static_veh_num = min(lane_static_veh_num)
+            max_lane_static_veh_num = max(lane_static_veh_num)
+
+
             if sim_step % params["control_interval"] == 0:
-                # print("control step")
+            # if sim_step % 25 == 0:
 
                 # Reward:
                 reward = static_veh_num_last_step - static_veh_num
-                reward += -10 if is_all_static_junction is True else 0
-                reward += min_lane_num - max_lane_num
-                reward += exit_vehicle_num_sum
-                # reward += (5 - max_lane_num) / 25
+                reward += 1 * (min_lane_static_veh_num - max_lane_static_veh_num)
+                reward += -10 if min_lane_static_veh_num > 3 else 0
+                reward += 1 * exit_vehicle_num_sum
                 summary_rewards.append(reward)
 
                 static_veh_num_last_step = static_veh_num
@@ -145,52 +150,113 @@ def run(controller_rl, params, log_level=0):
 
                 # Training the model
                 if sim_step > 0:
-                    # policy_update = controller_rl.update(last_state, last_action, reward, norm_feat)
                     policy_update = controller_rl.update(last_state, last_action, reward, features)
 
-                # If average speed of vehicles in junction is too slow, the junction is deadlock.
-                # The simulation need to be reset
-                # if (avg_speed_junction < 0.1 and last_avg_speed < 0.1) \
-                #         or sim_step > EPOCH - 100 \
-                #         or min_lane_num >= 5 \
-                #         or max_lane_num >= 20:
-                if sim_step > EPOCH - 10 or is_all_static_junction or min_lane_num > 5 or max_lane_num > 20:
-                    # print("reset - avg_speed_junction: %s" % avg_speed_junction)
-                    # print(" sim_step：%s" % sim_step)
-                    # print(" min_lane_num：%s" % min_lane_num)
-                    # print(" max_lane_num：%s" % max_lane_num)
-                    traci.close()
-                    sumoProcess.kill()
-                    data = controller.travelTimeDict
-                    process_data(data, params, episode, type="train", summary=summary_write)
-                    break
                 # action = controller_rl.policy(norm_feat, controller_rl.adj, training_mode=True)
                 action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
                 last_action = action
                 action_exc = action
                 # last_state = norm_feat
                 last_state = features
-            controller.run_step(action_exc)
+                controller.run_step(action_exc)
 
+
+            if sim_step > EPOCH - 10 or min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
+                # print("reset - avg_speed_junction: %s" % avg_speed_junction)
+                # print(" sim_step：%s" % sim_step)
+                # print(" min_lane_num：%s" % min_lane_num)
+                # print(" max_lane_num：%s" % max_lane_num)
+                process_data(controller.travelTimeDict, params, episode, type="train", summary=summary_write)
+                traci.close()
+                sumoProcess.kill()
+                break
+
+        # if episode % 36 == 0:
+        #     deltaTime, deltaNum = test_suit(controller_rl, params)
+        #     if deltaTime <= best_deltaTime and deltaNum <= best_deltaNum:
+        #         best_deltaTime = deltaTime
+        #         best_deltaNum = deltaNum
+        #         print("Saving the best test model... The deltaTime : {} the deltaNume : {}".format(deltaTime, deltaNum))
+        #         controller_rl.save_weights(path)
+        #     else:
+        #         if os.path.exists(os.path.join(path, "protagonist_model.pth")):
+        #             print("Loading the best model...")
+        #             controller_rl.load_weights(path)
         summary_write.add_scalar('Mean reward at each episode', numpy.mean(summary_rewards), episode)
+        controller_rl.save_weights(path)
         print("The %s th episode's reward is: %s" % (episode, numpy.mean(summary_rewards)))
-
-        # summary_write.add_scalar('protagonist_discounted_returns', protagonist_discounted_return, episode_id)
-        # summary_write.add_scalar('protagonist_undiscounted_returns', protagonist_undiscounted_return, episode_id)
-        # summary_write.add_scalar('training_discounted_returns', env.discounted_return, episode_id)
-        # summary_write.add_scalar('training_undiscounted_returns', env.undiscounted_return, episode_id)
-        # summary_write.add_scalar('training_domain_statistic', env.domain_statistic(), episode_id)
     log(log_level, 0, "DONE")
     return_values = {}
-    data.save_json(join(path, "returns.json"), return_values)
-    controller_rl.save_weights(path)
+    # data.save_json(join(path, "returns.json"), return_values)
+    # controller_rl.save_weights(path)
     return return_values
+
+
+def test_suit(controller_rl, params):
+    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
+    EPOCH = 10000
+    episode = 0
+    mat_time = []
+    mat_deltaNum = []
+    for prob in probability_list:
+    # for prob in [0.5]:
+        list_row_time = []
+        for ratio in ICV_ratios:
+        # for ratio in [0.1]:
+            episode += 1
+            deltaNum = 0
+            alterDemand(tls_rou_path, prob, ratio)
+            logging.info("The %s th episode test simulation start..." % (episode))
+            sumoProcess = simulation_start(params)
+            controller = ICV_Controller()
+            travel_time = {}
+            max_lane_wait_veh_num_episode = 0
+            # simulation environment related
+            action_input = [0 for _ in range(8)]
+            sim_step = 0
+            for sim_step in range(EPOCH):
+                traci.simulationStep()
+                features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time \
+                    = controller.feature_step(timestep=sim_step)
+
+                max_lane_static_veh_num = max(lane_static_veh_num)
+                min_lane_static_veh_num = min(lane_static_veh_num)
+
+                if max_lane_static_veh_num > max_lane_wait_veh_num_episode:
+                    max_lane_wait_veh_num_episode = max_lane_static_veh_num
+
+                if max_lane_static_veh_num - min_lane_static_veh_num > deltaNum:
+                    deltaNum = max_lane_static_veh_num - min_lane_static_veh_num
+
+                if min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
+                    mat_deltaNum.append(deltaNum)
+                    break
+
+                if sim_step % params["control_interval"] == 0:
+                    action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
+                    action_input = action
+                    # print(action_input)
+                controller.run_step(action_input)
+            if len(travel_time.keys()) > 0:
+                avg_travel_time = np.mean(list(travel_time.values()))
+                print("Test suit {} : scenario end: step:{}, travel_time:{}".format(episode, sim_step, avg_travel_time))
+                list_row_time.append(avg_travel_time)
+            else:
+                list_row_time.append(float('inf'))
+                print("Test suit {} : scenario end: step:{}, travel_time: inf".format(episode, sim_step))
+
+            traci.close()
+            sumoProcess.kill()
+
+        mat_time.append(list_row_time)
+
+    return np.mean(mat_time), np.mean(mat_deltaNum)
 
 
 def test(controller_rl, params, log_level=0):
     path = params["directory"]
     # simulation step
-    EPOCH = 7200
+    EPOCH = 10000
 
     logging.basicConfig(level=logging.INFO)
 
@@ -202,41 +268,97 @@ def test(controller_rl, params, log_level=0):
     adj = Variable(adj)
 
     tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
-    # probability = np.random.choice(probability_list)
-    # icv_ratio = np.random.choice(ICV_ratios)
-    testNum = len(probability_list) * len(ICV_ratios)
 
-    for episode in range(testNum):
-        # alterDemand(tls_rou_path, probability_list[int(episode/len(probability_list))], ICV_ratios[episode % len(ICV_ratios)])
-        alterDemand(tls_rou_path, 0.05, 0.1)
-        logging.info("The %s th episode simulation start..." % (episode))
-        sumoProcess = simulation_start(params)
-        controller = ICV_Controller()
-        # simulation environment related
-        # action_init = [0 for _ in range(8)]
-        for sim_step in range(EPOCH):
-            traci.simulationStep()
-            # print(sim_step)
-            """
-            feature - 特征矩阵
-            static_veh_num - 静止车数目
-            is_all_static_junction - 路口内是否全为静止车
-            min_lane_num - 静止车辆最多车道的车辆数
-            max_lane_num - 静止车辆最少车道的车辆数
-            exit_vehicle_num  - 离开车辆的数目
-            """
-            features, static_veh_num, is_all_static_junction, min_lane_num, max_lane_num, exit_vehicle_num \
-                = controller.feature_step(timestep=sim_step)
-            # exit_vehicle_num_sum += exit_vehicle_num
-            if sim_step % 50 == 0:
-                if params["reload"]:
-                    action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
-                    action_init = action
-                    controller.run_step(action)
+    episode = 0
+    mat_time = []
+    mat_step = []
+    mat_wait_veh_lane = []
+    for prob in probability_list:
+        list_row_time = []
+        list_row_step = []
+        list_row_wait_veh_lane = []
+        for ratio in ICV_ratios:
+            episode += 1
+            alterDemand(tls_rou_path, prob, ratio)
+            logging.info("The %s th episode simulation start..." % (episode))
 
-            # input_action = action_init
-            # controller.run_step(input_action)
-            # print(input_action)
+            repeat_row_time = []
+            repeat_row_step = []
+            repeat_row_waiting_veh_lane = []
+            for index in range(3):
+                sumoProcess = simulation_start(params)
+                controller = ICV_Controller()
+                travel_time = {}
+                max_lane_wait_veh_num_episode = 0
+                # simulation environment related
+                action_init = [0 for _ in range(8)]
+                sim_step = 0
+                for sim_step in range(EPOCH):
+                    traci.simulationStep()
+                    features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time \
+                        = controller.feature_step(timestep=sim_step)
+
+                    max_lane_static_veh_num = max(lane_static_veh_num)
+                    min_lane_static_veh_num = min(lane_static_veh_num)
+
+                    if max_lane_static_veh_num > max_lane_wait_veh_num_episode:
+                        max_lane_wait_veh_num_episode = max_lane_static_veh_num
+
+                    if min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
+                        break
+
+                    if sim_step % params["control_interval"] == 0:
+                        if params["reload"]:
+                            action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
+                            action_init = action
+                            controller.run_step(action)
+
+                    # input_action = action_init
+                    # controller.run_step(input_action)
+                    # print(input_action)
+                avg_travel_time = np.mean(list(travel_time.values()))
+                # print("scenario end: step:{}, travel_time:{}".format(sim_step, avg_travel_time))
+                repeat_row_time.append(avg_travel_time)
+                repeat_row_step.append(sim_step)
+                repeat_row_waiting_veh_lane.append(max_lane_wait_veh_num_episode)
+
+                traci.close()
+                sumoProcess.kill()
+
+            list_row_time.append(np.mean(repeat_row_time))
+            list_row_step.append(np.mean(repeat_row_step))
+            list_row_wait_veh_lane.append(np.mean(repeat_row_waiting_veh_lane))
+
+        mat_time.append(list_row_time)
+        mat_step.append(list_row_step)
+        mat_wait_veh_lane.append(list_row_wait_veh_lane)
+
+    exp_name = params['reload_exp']
+    path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/result/"
+    path_time = path + "{}_GAT_time.csv".format(params['exp_name'])
+    path_step = path + "{}_GAT_step.csv".format(params['exp_name'])
+    path_wait_lane = path + "{}_GAT_wait_lane.csv".format(params['exp_name'])
+
+    f = open(path_time, "w+", newline='')
+    csv_writer = csv.writer(f)
+    for row in mat_time:
+        csv_writer.writerow(row)
+    f.close()
+
+    f = open(path_step, "w+", newline='')
+    csv_writer = csv.writer(f)
+    for row in mat_step:
+        csv_writer.writerow(row)
+    f.close()
+
+    f = open(path_wait_lane, "w+", newline='')
+    csv_writer = csv.writer(f)
+    for row in mat_wait_veh_lane:
+        csv_writer.writerow(row)
+    f.close()
+
+    print("Test Done!!!")
+
     log(log_level, 0, "DONE")
     return_values = {}
     # data.save_json(join(path, "returns.json"), return_values)

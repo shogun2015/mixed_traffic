@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument("--reload", action="store_true", default=False, help="reload the model")
     parser.add_argument("--reload_exp", type=str, default=None, help="The reload exp name")
     parser.add_argument("--test", action="store_true", default=False, help="Test")
-    parser.add_argument("--control_interval", type=int, default=5, help="The control interval ")
+    parser.add_argument("--control_interval", type=int, default=25, help="The control interval ")
     parser.add_argument("--gui", action="store_true", default=False, help="Visible")
     parser.add_argument("--port", type=int, default=8813, help="The port of gui")
     parser.add_argument("--probability", type=float, default=0.01, help="The total probability of IDV and HDV")
@@ -49,14 +49,21 @@ addInformation += args.exp_name
 params["directory"] = "output/{}/{}".format(date_str, addInformation)
 controller = algorithm.make(params["algorithm_name"], params)
 
+experiment_start = True
+
 if params["reload"]:
-    params["reload_exp"] = join("output", params["reload_exp"], "protagonist_model.pth")
+    params['exp_name'] = params["reload_exp"].split("/")[-1]
+    print("Test Exp Name:{}".format(params['exp_name']))
+    params["reload_exp"] = join("output", params["reload_exp"])
     if os.path.exists(params["reload_exp"]):
         controller.load_weights(params["reload_exp"])
         print("Load model success")
     else:
         print("Not found model")
-if args.test:
-    result = experiments.test(controller, params, log_level=0)
-else:
-    result = experiments.run(controller, params, log_level=0)
+        experiment_start = False
+
+if experiment_start:
+    if args.test:
+        result = experiments.test(controller, params, log_level=0)
+    else:
+        result = experiments.run(controller, params, log_level=0)

@@ -31,6 +31,7 @@ class AdversarialModule(torch.nn.Module):
         self.protagonist_net.eval()
 
     def load_weights_from_history(self, path):
+        path = join(path, "protagonist_model.pth")
         # self.protagonist_net = torch.load(path, map_location='cuda')
         self.protagonist_net.load_state_dict(torch.load(path, map_location='cuda'))
         self.protagonist_net.eval()

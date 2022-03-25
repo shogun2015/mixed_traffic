@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
+
+import const
 from agents.controller import DeepLearningController, get_param_or_default
 from modules import MLP, AdversarialModule, MLP3D, TimeTransformer
 import time
@@ -12,21 +14,28 @@ from GAT.models import GAT
 class PPONet(nn.Module):
     def __init__(self, input_shape, nr_actions, max_history_length, q_values=False):
         super(PPONet, self).__init__()
+        num_head = 3
+        num_action = 2
         # self.fc_net = MLP(input_shape, max_history_length)
-        self.fc_net = GAT(nfeat=84, nhid=8, nclass=2, dropout=0.6, nheads=8, alpha=0.2)
-        self.forward_net = MLP(input_shape, max_history_length)
+        self.gat_net = GAT(nfeat=2*(const.const_var.CELL_NUM_JUNCTION + const.const_var.CELL_NUM_LANE),
+                          nhid=8, nclass=num_action, dropout=0.6, nheads=num_head, alpha=0.2)
+        # self.gat_net = GAT(nfeat=2*(const.const_var.CELL_NUM_LANE), nhid=8, nclass=num_action,
+        #                    dropout=0.6, nheads=num_head, alpha=0.2)
+        self.forward_net = MLP(input_shape, max_history_length, nr_hidden_units=16)
         # self.action_head = nn.Linear(self.fc_net.nr_hidden_units, nr_actions)
-        self.action_head = nn.Linear(64, nr_actions)
+        self.action_head = nn.Linear(16, nr_actions)
         if q_values:
             # self.value_head = nn.Linear(self.fc_net.nr_hidden_units, nr_actions)
-            self.value_head = nn.Linear(64, nr_actions)
+            # self.value_head = nn.Linear(64, nr_actions)
+            self.value_head = nn.Linear(16, nr_actions)
         else:
             # self.value_head = nn.Linear(self.fc_net.nr_hidden_units, 1)
-            self.value_head = nn.Linear(64, 1)
+            # self.value_head = nn.Linear(64, 1)
+            self.value_head = nn.Linear(16, 1)
         self.action_head_sigmoid = nn.Sigmoid()
 
     def forward(self, x, adj, use_gumbel_softmax=False):
-        x_gat = self.fc_net(x, adj)
+        x_gat = self.gat_net(x, adj)
         x = self.forward_net(x_gat)
         action_out = self.action_head(x)
         if use_gumbel_softmax:
