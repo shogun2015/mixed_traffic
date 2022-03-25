@@ -6,6 +6,7 @@ from utils import pad_or_truncate_sequences
 from GAT.utils import *
 from const import const_var
 from torch.autograd import Variable
+from action_generator import *
 
 
 class ReplayMemory:
@@ -98,8 +99,11 @@ class DeepLearningController(Controller):
         self.current_histories = observations
         action_probs = self.joint_action_probs(self.current_histories, adj, training_mode)
         action = np.copy(action_probs)
-        action[action > 0.5] = 1
-        action[action <= 0.5] = 0
+
+        # action[action > 0.5] = 1
+        # action[action <= 0.5] = 0
+        action = Q_to_Action(action)
+
         return action
         # return [numpy.random.choice(self.actions, p=probs) for probs in action_probs]
 

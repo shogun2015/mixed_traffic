@@ -192,65 +192,65 @@ def run(controller_rl, params, log_level=0):
     return return_values
 
 
-def test_suit(controller_rl, params):
-    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
-    EPOCH = 10000
-    episode = 0
-    mat_time = []
-    mat_deltaNum = []
-    for prob in probability_list:
-    # for prob in [0.5]:
-        list_row_time = []
-        for ratio in ICV_ratios:
-        # for ratio in [0.1]:
-            episode += 1
-            deltaNum = 0
-            alterDemand(tls_rou_path, prob, ratio)
-            logging.info("The %s th episode test simulation start..." % (episode))
-            sumoProcess = simulation_start(params)
-            controller = ICV_Controller()
-            travel_time = {}
-            max_lane_wait_veh_num_episode = 0
-            # simulation environment related
-            action_input = [0 for _ in range(8)]
-            sim_step = 0
-            for sim_step in range(EPOCH):
-                traci.simulationStep()
-                features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time \
-                    = controller.feature_step(timestep=sim_step)
-
-                max_lane_static_veh_num = max(lane_static_veh_num)
-                min_lane_static_veh_num = min(lane_static_veh_num)
-
-                if max_lane_static_veh_num > max_lane_wait_veh_num_episode:
-                    max_lane_wait_veh_num_episode = max_lane_static_veh_num
-
-                if max_lane_static_veh_num - min_lane_static_veh_num > deltaNum:
-                    deltaNum = max_lane_static_veh_num - min_lane_static_veh_num
-
-                if min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
-                    mat_deltaNum.append(deltaNum)
-                    break
-
-                if sim_step % params["control_interval"] == 0:
-                    action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
-                    action_input = action
-                    # print(action_input)
-                controller.run_step(action_input)
-            if len(travel_time.keys()) > 0:
-                avg_travel_time = np.mean(list(travel_time.values()))
-                print("Test suit {} : scenario end: step:{}, travel_time:{}".format(episode, sim_step, avg_travel_time))
-                list_row_time.append(avg_travel_time)
-            else:
-                list_row_time.append(float('inf'))
-                print("Test suit {} : scenario end: step:{}, travel_time: inf".format(episode, sim_step))
-
-            traci.close()
-            sumoProcess.kill()
-
-        mat_time.append(list_row_time)
-
-    return np.mean(mat_time), np.mean(mat_deltaNum)
+# def test_suit(controller_rl, params):
+#     tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
+#     EPOCH = 10000
+#     episode = 0
+#     mat_time = []
+#     mat_deltaNum = []
+#     for prob in probability_list:
+#     # for prob in [0.5]:
+#         list_row_time = []
+#         for ratio in ICV_ratios:
+#         # for ratio in [0.1]:
+#             episode += 1
+#             deltaNum = 0
+#             alterDemand(tls_rou_path, prob, ratio)
+#             logging.info("The %s th episode test simulation start..." % (episode))
+#             sumoProcess = simulation_start(params)
+#             controller = ICV_Controller()
+#             travel_time = {}
+#             max_lane_wait_veh_num_episode = 0
+#             # simulation environment related
+#             action_input = [0 for _ in range(8)]
+#             sim_step = 0
+#             for sim_step in range(EPOCH):
+#                 traci.simulationStep()
+#                 features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time \
+#                     = controller.feature_step(timestep=sim_step)
+#
+#                 max_lane_static_veh_num = max(lane_static_veh_num)
+#                 min_lane_static_veh_num = min(lane_static_veh_num)
+#
+#                 if max_lane_static_veh_num > max_lane_wait_veh_num_episode:
+#                     max_lane_wait_veh_num_episode = max_lane_static_veh_num
+#
+#                 if max_lane_static_veh_num - min_lane_static_veh_num > deltaNum:
+#                     deltaNum = max_lane_static_veh_num - min_lane_static_veh_num
+#
+#                 if min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
+#                     mat_deltaNum.append(deltaNum)
+#                     break
+#
+#                 if sim_step % params["control_interval"] == 0:
+#                     action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
+#                     action_input = action
+#                     # print(action_input)
+#                 controller.run_step(action_input)
+#             if len(travel_time.keys()) > 0:
+#                 avg_travel_time = np.mean(list(travel_time.values()))
+#                 print("Test suit {} : scenario end: step:{}, travel_time:{}".format(episode, sim_step, avg_travel_time))
+#                 list_row_time.append(avg_travel_time)
+#             else:
+#                 list_row_time.append(float('inf'))
+#                 print("Test suit {} : scenario end: step:{}, travel_time: inf".format(episode, sim_step))
+#
+#             traci.close()
+#             sumoProcess.kill()
+#
+#         mat_time.append(list_row_time)
+#
+#     return np.mean(mat_time), np.mean(mat_deltaNum)
 
 
 def test(controller_rl, params, log_level=0):
