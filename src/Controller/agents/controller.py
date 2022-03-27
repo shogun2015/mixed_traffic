@@ -1,4 +1,6 @@
 import random
+import sys
+
 import numpy
 import torch
 from utils import get_param_or_default
@@ -69,6 +71,7 @@ class DeepLearningController(Controller):
         self.episode_transitions = []
         self.max_history_length = get_param_or_default(params, "max_history_length", 1)
         self.target_update_period = params["target_update_period"]
+        self.action_gen = params["action_gen"]
         self.epsilon = 1
         self.epsilon_decay = 1.0/200
         self.epsilon_min = 0.01
@@ -100,9 +103,14 @@ class DeepLearningController(Controller):
         action_probs = self.joint_action_probs(self.current_histories, adj, training_mode)
         action = np.copy(action_probs)
 
-        # action[action > 0.5] = 1
-        # action[action <= 0.5] = 0
-        action = Q_to_Action(action)
+        if self.action_gen == "thresh":
+            action[action > 0.5] = 1
+            action[action <= 0.5] = 0
+        elif self.action_gen == "QtoA":
+            action = Q_to_Action(action)
+        else:
+            print("Please specify action generation method")
+            sys.exit()
 
         return action
         # return [numpy.random.choice(self.actions, p=probs) for probs in action_probs]
@@ -153,6 +161,6 @@ class DeepLearningController(Controller):
 
     def update_target_network(self):
         target_net_available = self.target_net is not None
-        if target_net_available and self.training_count % self.target_update_period is 0:
+        if target_net_available and self.training_count % self.target_update_period == 0:
             self.target_net.protagonist_net.load_state_dict(self.policy_net.protagonist_net.state_dict())
             self.target_net.protagonist_net.eval()

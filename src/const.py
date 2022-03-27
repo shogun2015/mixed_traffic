@@ -7,6 +7,8 @@ class const_var:
     JUNCTION_ID = [":J_C_0_0", ":J_C_1_0", ":J_C_2_0", ":J_C_3_0",
                    ":J_C_4_0", ":J_C_5_0", ":J_C_6_0", ":J_C_7_0"]
 
+    action_gen_list = ["thresh", "QtoA"]
+
     """
     timestep:247 	 vid:DToU_HDV.0 	 travel_time:12.047461378523302
     timestep:900 	 vid:DToU_HDV.1 	 travel_time:13.599140835551509
@@ -45,13 +47,13 @@ class const_var:
     LANE_LENGTH = 189.6  # get from traci
     JUNCTION_LENGTH = 20
     VEH_LENGTH = 5
-    MINI_GAP = 2
+    MINI_GAP = 2.5
     CELL_SIZE = VEH_LENGTH + MINI_GAP
 
     # CELL_NUM_JUNCTION = 4     # 20 // 5
     # CELL_NUM_LANE = 38        # 190 // 5
-    CELL_NUM_JUNCTION = 3       # 20 // 7
-    CELL_NUM_LANE = 28          # 190 // 7
+    CELL_NUM_JUNCTION = 3       # 20 // 7.5
+    CELL_NUM_LANE = 26          # 190 // 7.5
 
     STRAIGHT = 30.0
     LEFT_TURN = 48.0

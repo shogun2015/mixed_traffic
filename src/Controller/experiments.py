@@ -20,6 +20,7 @@ from torch.autograd import Variable
 from alterXML import *
 
 probability_list = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1]
+vehsPerHour_list = [36, 72, 108, 144, 180, 216, 252, 288, 324, 360]
 ICV_ratios = [0.1, 0.2, 0.3, 0.4, 0.5, 1]
 
 
@@ -43,12 +44,18 @@ def simulation_start(params):
         sumoBinary = "/usr/share/sumo/bin/sumo-gui"
     else:
         sumoBinary = "/usr/share/sumo/bin/sumo"
-    # config traffic light file
-    rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
-    auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.sumocfg"
+
+    file_seq = ""
+    if params['rou'] > 0:
+        file_seq = "-{}".format(params['rou'])
+
+    # auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS
+    # -uniform.sumocfg"
+    auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS" \
+                        "-uniform{}.sumocfg".format(file_seq)
     sumoProcess = subprocess.Popen([sumoBinary, "-c", auto_cfg_filepath, "--remote-port", str(PORT), "--start"],
                                    stdout=sys.stdout, stderr=sys.stderr)
-    logging.info("start SUMO GUI.")
+    # logging.info("start SUMO GUI.")
 
     traci.init(PORT)
     logging.info("start TraCI.")
@@ -70,7 +77,8 @@ def process_data(data, params, episode, type="test", summary=None):
         times = data[vid]
         if times.exit_time != 0:
             lane = vid.split("_")[0]
-            throughTimeDelta = times.exit_time - times.entry_time - ThroughTime_ori[lane]
+            # throughTimeDelta = times.exit_time - times.entry_time - ThroughTime_ori[lane]
+            throughTimeDelta = times.exit_time - times.entry_time
             deltaTime.append(throughTimeDelta)
             passVheNums += 1
     totalVeh = len(vid_keys)
@@ -98,14 +106,21 @@ def run(controller_rl, params, log_level=0):
         adj = adj.cuda()
     adj = Variable(adj)
 
-    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
+    file_seq = ""
+    if params['rou'] > 0:
+        file_seq = "-{}".format(params['rou'])
+    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS" \
+                   "-uniform{}.rou.xml".format(file_seq)
+
     best_deltaTime = np.inf
     best_deltaNum = np.inf
     for episode in range(params["Episode"]):
         logging.info("The %s th episode simulation start..." % (episode))
         probability = np.random.choice(probability_list)
+        vehsPerHour = np.random.choice(vehsPerHour_list)
         icv_ratio = np.random.choice(ICV_ratios)
-        alterDemand(tls_rou_path, probability, icv_ratio)
+        # alterDemand(tls_rou_path, probability, icv_ratio)
+        alterDemand_uniform(tls_rou_path, vehsPerHour, icv_ratio)
         sumoProcess = simulation_start(params)
         controller = ICV_Controller()
         # simulation environment related
@@ -114,7 +129,8 @@ def run(controller_rl, params, log_level=0):
         static_veh_in_junction_last = 0
         # last_avg_speed = 10
         last_state = None
-        last_action = None
+        last_action = [-1 for _ in range(8)]
+        last_last_action = [-1 for _ in range(8)]
         summary_rewards = []
         action_exc = [0 for _ in range(8)]
         exit_vehicle_num_sum = 0
@@ -128,20 +144,30 @@ def run(controller_rl, params, log_level=0):
             max_lane_num - 静止车辆最少车道的车辆数
             exit_vehicle_num  - 离开车辆的数目
             """
-            features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time = controller.feature_step(timestep=sim_step)
+            features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time = controller.feature_step(
+                timestep=sim_step)
             exit_vehicle_num_sum += exit_vehicle_num
 
             min_lane_static_veh_num = min(lane_static_veh_num)
             max_lane_static_veh_num = max(lane_static_veh_num)
 
-
             if sim_step % params["control_interval"] == 0:
-            # if sim_step % 25 == 0:
+                # if sim_step % 25 == 0:
+
+                features = np.c_[features, last_action]
+
+                # same_action = True
+                # for i in range(8):
+                #     if last_action[i] != last_last_action[i]:
+                #         same_action = False
+                #         break
 
                 # Reward:
-                reward = static_veh_num_last_step - static_veh_num
-                reward += 1 * (min_lane_static_veh_num - max_lane_static_veh_num)
-                reward += -10 if min_lane_static_veh_num > 3 else 0
+                reward = 0
+                # reward += static_veh_num_last_step - static_veh_num
+                # reward += min_lane_static_veh_num - max_lane_static_veh_num
+                reward += -10 if min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20 else 0
+                # reward += 1 if same_action else -1
                 reward += 1 * exit_vehicle_num_sum
                 summary_rewards.append(reward)
 
@@ -149,17 +175,17 @@ def run(controller_rl, params, log_level=0):
                 exit_vehicle_num_sum = 0
 
                 # Training the model
-                if sim_step > 0:
+                if sim_step > 1:
                     policy_update = controller_rl.update(last_state, last_action, reward, features)
 
                 # action = controller_rl.policy(norm_feat, controller_rl.adj, training_mode=True)
                 action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
+                last_last_action = last_action
                 last_action = action
                 action_exc = action
                 # last_state = norm_feat
                 last_state = features
                 controller.run_step(action_exc)
-
 
             if sim_step > EPOCH - 10 or min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
                 # print("reset - avg_speed_junction: %s" % avg_speed_junction)
@@ -267,25 +293,32 @@ def test(controller_rl, params, log_level=0):
         adj = adj.cuda()
     adj = Variable(adj)
 
-    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.rou.xml"
+    last_action = [-1 for _ in range(8)]
 
+    # tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS-uniform-test.rou.xml"
+    file_seq = ""
+    if params['rou'] > 0:
+        file_seq = "-{}".format(params['rou'])
+    tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS" \
+                   "-uniform{}.rou.xml".format(file_seq)
     episode = 0
     mat_time = []
     mat_step = []
     mat_wait_veh_lane = []
-    for prob in probability_list:
+    # for prob in probability_list:
+    for prob in vehsPerHour_list:
         list_row_time = []
         list_row_step = []
         list_row_wait_veh_lane = []
         for ratio in ICV_ratios:
             episode += 1
-            alterDemand(tls_rou_path, prob, ratio)
+            alterDemand_uniform(tls_rou_path, prob, ratio)
             logging.info("The %s th episode simulation start..." % (episode))
 
             repeat_row_time = []
             repeat_row_step = []
             repeat_row_waiting_veh_lane = []
-            for index in range(3):
+            for index in range(1):
                 sumoProcess = simulation_start(params)
                 controller = ICV_Controller()
                 travel_time = {}
@@ -309,8 +342,10 @@ def test(controller_rl, params, log_level=0):
 
                     if sim_step % params["control_interval"] == 0:
                         if params["reload"]:
+                            features = np.c_[features, last_action]
                             action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
                             action_init = action
+                            last_action = action
                             controller.run_step(action)
 
                     # input_action = action_init

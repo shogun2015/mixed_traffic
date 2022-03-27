@@ -17,8 +17,8 @@ class PPONet(nn.Module):
         num_head = 3
         num_action = 2
         # self.fc_net = MLP(input_shape, max_history_length)
-        self.gat_net = GAT(nfeat=2*(const.const_var.CELL_NUM_JUNCTION + const.const_var.CELL_NUM_LANE),
-                          nhid=8, nclass=num_action, dropout=0.6, nheads=num_head, alpha=0.2)
+        self.gat_net = GAT(nfeat=2 * (const.const_var.CELL_NUM_JUNCTION + const.const_var.CELL_NUM_LANE) + 1,
+                           nhid=8, nclass=num_action, dropout=0.6, nheads=num_head, alpha=0.2)
         # self.gat_net = GAT(nfeat=2*(const.const_var.CELL_NUM_LANE), nhid=8, nclass=num_action,
         #                    dropout=0.6, nheads=num_head, alpha=0.2)
         self.forward_net = MLP(input_shape, max_history_length, nr_hidden_units=16)

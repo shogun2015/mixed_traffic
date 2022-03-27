@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     # batch_32_pass_rewardx1_GAT_step.csv
     path_base = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/result/"
-    exp_name = "batch_32_pass_rewardx1_GAT"
+    exp_name = "Q_to_action_GAT"
 
     file_time = path_base + "{}_time.csv".format(exp_name)
     file_step = path_base + "{}_step.csv".format(exp_name)
@@ -49,7 +49,7 @@ if __name__ == '__main__':
                 annot=True)
     plt.xlabel("车辆产生率（辆/秒）", fontproperties=zhfont)
     plt.ylabel("智能网联汽车占比（%）", fontproperties=zhfont)
-    plt.title("平均延迟（s） - 固定时间法", fontproperties=zhfont)
+    plt.title("平均延迟（s） - GRL-UIV", fontproperties=zhfont)
 
     png_name = exp_name + "_time.png"
     plt.savefig(png_name, dpi=600, bbox_inches='tight', pad_inches = 0)
