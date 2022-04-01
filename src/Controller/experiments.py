@@ -9,12 +9,14 @@ from os.path import join
 
 import numpy
 import numpy as np
+import torch.distributions.normal
 import traci
 from torch.utils.tensorboard import SummaryWriter
 
 import data as data
 from Controller.ICV_Controller import ICV_Controller
 from GAT.utils import *
+from action_generator import Q_to_Action
 from const import const_var
 from torch.autograd import Variable
 from alterXML import *
@@ -36,8 +38,7 @@ def produce_choice_list():
             list.append(i)
     return list
 
-
-def simulation_start(params):
+def simulation_start(params, flow_type, param_2, icv_ratio):
     # simulation port and software
     PORT = params["port"]
     if params["gui"]:
@@ -45,22 +46,42 @@ def simulation_start(params):
     else:
         sumoBinary = "/usr/share/sumo/bin/sumo"
 
-    file_seq = ""
-    if params['rou'] > 0:
-        file_seq = "-{}".format(params['rou'])
+    file_base = '/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS'
+    file_seq = flow_type + "-" + str(params['rou'])
 
-    # auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS
-    # -uniform.sumocfg"
-    auto_cfg_filepath = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS" \
-                        "-uniform{}.sumocfg".format(file_seq)
-    sumoProcess = subprocess.Popen([sumoBinary, "-c", auto_cfg_filepath, "--remote-port", str(PORT), "--start"],
+    tls_rou_path = file_base + file_seq + ".rou.xml"
+    tls_sumocfg_path = file_base + file_seq + ".sumocfg"
+
+    if flow_type == "-uniform":
+        alterDemand_uniform(tls_rou_path, param_2, icv_ratio)
+    elif flow_type == "-random":
+        alterDemand_random(tls_rou_path, param_2, icv_ratio)
+
+    sumoProcess = subprocess.Popen([sumoBinary, "-c", tls_sumocfg_path, "--remote-port", str(PORT), "--start"],
                                    stdout=sys.stdout, stderr=sys.stderr)
-    # logging.info("start SUMO GUI.")
 
     traci.init(PORT)
     logging.info("start TraCI.")
 
     return sumoProcess
+
+
+def action_map(params, action):
+    if params['action_gen'] == "thresh":
+        # action[action > 0.5] = 1
+        # action[action <= 0.5] = 0
+        action_temp = []
+        for i in range(8):
+            temp = 1 if action[i] > 0.5 else 0
+            action_temp.append(temp)
+        return numpy.array(action_temp)
+    elif params['action_gen'] == "QtoA":
+        action = np.array(action)
+        action[action <= 0] = 0.001
+        return Q_to_Action(action)
+    else:
+        print("Please specify action generation method")
+        sys.exit()
 
 
 def process_data(data, params, episode, type="test", summary=None):
@@ -112,25 +133,40 @@ def run(controller_rl, params, log_level=0):
     tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS" \
                    "-uniform{}.rou.xml".format(file_seq)
 
-    best_deltaTime = np.inf
-    best_deltaNum = np.inf
+    flows_train = []
+    if params['flow_type'] == 'uniform':
+        flows_train = ["-uniform"]
+    elif params['flow_type'] == 'random':
+        flows_train = ["-random"]
+    elif params['flow_type'] == 'mixed':
+        flows_train = ["-uniform", "-random"]
+
+    # best_deltaTime = np.inf
+    # best_deltaNum = np.inf
     for episode in range(params["Episode"]):
         logging.info("The %s th episode simulation start..." % (episode))
-        probability = np.random.choice(probability_list)
-        vehsPerHour = np.random.choice(vehsPerHour_list)
+
+        flow_type = np.random.choice(flows_train)
+        param_2 = 0
+        if flow_type == "-uniform":
+            param_2 = np.random.choice(vehsPerHour_list)
+        elif flow_type == "-random":
+            param_2 = np.random.choice(probability_list)
         icv_ratio = np.random.choice(ICV_ratios)
+
         # alterDemand(tls_rou_path, probability, icv_ratio)
-        alterDemand_uniform(tls_rou_path, vehsPerHour, icv_ratio)
-        sumoProcess = simulation_start(params)
+        sumoProcess = simulation_start(params, flow_type, param_2, icv_ratio)
+
         controller = ICV_Controller()
         # simulation environment related
-        static_veh_num = 0
-        static_veh_num_last_step = 0
-        static_veh_in_junction_last = 0
+        # static_veh_num = 0
+        # static_veh_num_last_step = 0
+        # static_veh_in_junction_last = 0
         # last_avg_speed = 10
         last_state = None
         last_action = [-1 for _ in range(8)]
-        last_last_action = [-1 for _ in range(8)]
+        last_action_exec = [-1 for _ in range(8)]
+        # last_last_action = [-1 for _ in range(8)]
         summary_rewards = []
         action_exc = [0 for _ in range(8)]
         exit_vehicle_num_sum = 0
@@ -154,7 +190,7 @@ def run(controller_rl, params, log_level=0):
             if sim_step % params["control_interval"] == 0:
                 # if sim_step % 25 == 0:
 
-                features = np.c_[features, last_action]
+                features = np.c_[features, last_action_exec]
 
                 # same_action = True
                 # for i in range(8):
@@ -171,7 +207,7 @@ def run(controller_rl, params, log_level=0):
                 reward += 1 * exit_vehicle_num_sum
                 summary_rewards.append(reward)
 
-                static_veh_num_last_step = static_veh_num
+                # static_veh_num_last_step = static_veh_num
                 exit_vehicle_num_sum = 0
 
                 # Training the model
@@ -180,9 +216,21 @@ def run(controller_rl, params, log_level=0):
 
                 # action = controller_rl.policy(norm_feat, controller_rl.adj, training_mode=True)
                 action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
-                last_last_action = last_action
-                last_action = action
-                action_exc = action
+                if params['algorithm_name'] == "PPOC":
+                    probs = action
+                    mu = probs[:, 0]
+                    sigma = probs[:, 1]
+                    actions = []
+                    for i in range(8):
+                        dis = torch.distributions.normal.Normal(mu[i], sigma[i])
+                        actions.append(dis.sample())
+                    last_action = actions
+                    action_exc = action_map(params, actions)
+                else:
+                    last_action = action
+                    action_exc = action_map(params, action)
+                # last_last_action = last_action
+                last_action_exec = action_exc
                 # last_state = norm_feat
                 last_state = features
                 controller.run_step(action_exc)
@@ -282,7 +330,7 @@ def run(controller_rl, params, log_level=0):
 def test(controller_rl, params, log_level=0):
     path = params["directory"]
     # simulation step
-    EPOCH = 10000
+    EPOCH = 4000
 
     logging.basicConfig(level=logging.INFO)
 
@@ -293,7 +341,7 @@ def test(controller_rl, params, log_level=0):
         adj = adj.cuda()
     adj = Variable(adj)
 
-    last_action = [-1 for _ in range(8)]
+    last_action_exec = [0 for _ in range(8)]
 
     # tls_rou_path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS-uniform-test.rou.xml"
     file_seq = ""
@@ -305,92 +353,113 @@ def test(controller_rl, params, log_level=0):
     mat_time = []
     mat_step = []
     mat_wait_veh_lane = []
+    flows_train = ["-uniform", "-random"]
     # for prob in probability_list:
-    for prob in vehsPerHour_list:
-        list_row_time = []
-        list_row_step = []
-        list_row_wait_veh_lane = []
-        for ratio in ICV_ratios:
-            episode += 1
-            alterDemand_uniform(tls_rou_path, prob, ratio)
-            logging.info("The %s th episode simulation start..." % (episode))
+    for flow_type in flows_train:
+        Param_list = []
+        if flow_type == "-random":
+            Param_list = probability_list
+        if flow_type == "-uniform":
+            Param_list = vehsPerHour_list
+        if len(Param_list) == 0:
+            print("Param list error!!!")
+            sys.exit()
+        for param_2 in Param_list:
+            list_row_time = []
+            list_row_step = []
+            list_row_wait_veh_lane = []
+            for ratio in ICV_ratios:
+                episode += 1
+                # alterDemand_uniform(tls_rou_path, prob, ratio)
+                logging.info("The %s th episode simulation start..." % (episode))
 
-            repeat_row_time = []
-            repeat_row_step = []
-            repeat_row_waiting_veh_lane = []
-            for index in range(1):
-                sumoProcess = simulation_start(params)
-                controller = ICV_Controller()
-                travel_time = {}
-                max_lane_wait_veh_num_episode = 0
-                # simulation environment related
-                action_init = [0 for _ in range(8)]
-                sim_step = 0
-                for sim_step in range(EPOCH):
-                    traci.simulationStep()
-                    features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time \
-                        = controller.feature_step(timestep=sim_step)
+                repeat_row_time = []
+                repeat_row_step = []
+                repeat_row_waiting_veh_lane = []
+                for index in range(1):
+                    sumoProcess = simulation_start(params, flow_type, param_2, ratio)
+                    controller = ICV_Controller()
+                    travel_time = {}
+                    max_lane_wait_veh_num_episode = 0
+                    # simulation environment related
+                    action_init = [0 for _ in range(8)]
+                    sim_step = 0
+                    for sim_step in range(EPOCH):
+                        traci.simulationStep()
+                        features, static_veh_num, lane_static_veh_num, exit_vehicle_num, travel_time \
+                            = controller.feature_step(timestep=sim_step)
 
-                    max_lane_static_veh_num = max(lane_static_veh_num)
-                    min_lane_static_veh_num = min(lane_static_veh_num)
+                        max_lane_static_veh_num = max(lane_static_veh_num)
+                        min_lane_static_veh_num = min(lane_static_veh_num)
 
-                    if max_lane_static_veh_num > max_lane_wait_veh_num_episode:
-                        max_lane_wait_veh_num_episode = max_lane_static_veh_num
+                        if max_lane_static_veh_num > max_lane_wait_veh_num_episode:
+                            max_lane_wait_veh_num_episode = max_lane_static_veh_num
 
-                    if min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
-                        break
+                        if min_lane_static_veh_num > 3 or max_lane_static_veh_num > 20:
+                            break
 
-                    if sim_step % params["control_interval"] == 0:
-                        if params["reload"]:
-                            features = np.c_[features, last_action]
-                            action = controller_rl.policy(features, controller_rl.adj, training_mode=True)
-                            action_init = action
-                            last_action = action
-                            controller.run_step(action)
+                        if sim_step % params["control_interval"] == 0:
+                            if params["reload"]:
+                                features = np.c_[features, last_action_exec]
+                                action = controller_rl.policy(features, controller_rl.adj, training_mode=False)
+                                if params['algorithm_name'] == "PPOC":
+                                    probs = action
+                                    mu = probs[:, 0]
+                                    sigma = probs[:, 1]
+                                    actions = []
+                                    for i in range(8):
+                                        dis = torch.distributions.normal.Normal(mu[i], sigma[i])
+                                        actions.append(dis.sample())
+                                    last_action = actions
+                                    action_exec = action_map(params, actions)
+                                else:
+                                    last_action = action
+                                    action_exec = action_map(params, action)
+                                last_action_exec = action_exec
+                                controller.run_step(action_exec)
 
-                    # input_action = action_init
-                    # controller.run_step(input_action)
-                    # print(input_action)
-                avg_travel_time = np.mean(list(travel_time.values()))
-                # print("scenario end: step:{}, travel_time:{}".format(sim_step, avg_travel_time))
-                repeat_row_time.append(avg_travel_time)
-                repeat_row_step.append(sim_step)
-                repeat_row_waiting_veh_lane.append(max_lane_wait_veh_num_episode)
+                        # input_action = action_init
+                        # controller.run_step(input_action)
+                        # print(input_action)
+                    avg_travel_time = np.mean(list(travel_time.values()))
+                    # print("scenario end: step:{}, travel_time:{}".format(sim_step, avg_travel_time))
+                    repeat_row_time.append(avg_travel_time)
+                    repeat_row_step.append(sim_step)
+                    repeat_row_waiting_veh_lane.append(max_lane_wait_veh_num_episode)
 
-                traci.close()
-                sumoProcess.kill()
+                    traci.close()
+                    sumoProcess.kill()
 
-            list_row_time.append(np.mean(repeat_row_time))
-            list_row_step.append(np.mean(repeat_row_step))
-            list_row_wait_veh_lane.append(np.mean(repeat_row_waiting_veh_lane))
+                list_row_time.append(np.mean(repeat_row_time))
+                list_row_step.append(np.mean(repeat_row_step))
+                list_row_wait_veh_lane.append(np.mean(repeat_row_waiting_veh_lane))
 
-        mat_time.append(list_row_time)
-        mat_step.append(list_row_step)
-        mat_wait_veh_lane.append(list_row_wait_veh_lane)
+            mat_time.append(list_row_time)
+            mat_step.append(list_row_step)
+            mat_wait_veh_lane.append(list_row_wait_veh_lane)
 
-    exp_name = params['reload_exp']
-    path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/result/"
-    path_time = path + "{}_GAT_time.csv".format(params['exp_name'])
-    path_step = path + "{}_GAT_step.csv".format(params['exp_name'])
-    path_wait_lane = path + "{}_GAT_wait_lane.csv".format(params['exp_name'])
+        path = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/result/"
+        path_time = path + "{}{}_GAT_time.csv".format(params['exp_name'], flow_type)
+        path_step = path + "{}{}_GAT_step.csv".format(params['exp_name'], flow_type)
+        path_wait_lane = path + "{}{}_GAT_wait_lane.csv".format(params['exp_name'], flow_type)
 
-    f = open(path_time, "w+", newline='')
-    csv_writer = csv.writer(f)
-    for row in mat_time:
-        csv_writer.writerow(row)
-    f.close()
+        f = open(path_time, "w+", newline='')
+        csv_writer = csv.writer(f)
+        for row in mat_time:
+            csv_writer.writerow(row)
+        f.close()
 
-    f = open(path_step, "w+", newline='')
-    csv_writer = csv.writer(f)
-    for row in mat_step:
-        csv_writer.writerow(row)
-    f.close()
+        f = open(path_step, "w+", newline='')
+        csv_writer = csv.writer(f)
+        for row in mat_step:
+            csv_writer.writerow(row)
+        f.close()
 
-    f = open(path_wait_lane, "w+", newline='')
-    csv_writer = csv.writer(f)
-    for row in mat_wait_veh_lane:
-        csv_writer.writerow(row)
-    f.close()
+        f = open(path_wait_lane, "w+", newline='')
+        csv_writer = csv.writer(f)
+        for row in mat_wait_veh_lane:
+            csv_writer.writerow(row)
+        f.close()
 
     print("Test Done!!!")
 

@@ -1,7 +1,7 @@
 <configuration>
    <input>
        <net-file value="TLS.net.xml" />
-       <route-files value="TLS.rou.xml" />
+       <route-files value="TLS-random.rou.xml" />
        <additional-files value="add-detector.xml" />
    </input>
    <time>

@@ -1,0 +1,14 @@
+<configuration>
+   <input>
+       <net-file value="TLS.net.xml" />
+       <route-files value="TLS-random-10.rou.xml" />
+       <additional-files value="add-detector.xml" />
+   </input>
+   <time>
+       <step-length value="0.2" />
+   </time>
+   <processing>
+       <lateral-resolution value="1." />
+       <fcd-output value="simulationResult.xml" />
+   </processing>
+</configuration>

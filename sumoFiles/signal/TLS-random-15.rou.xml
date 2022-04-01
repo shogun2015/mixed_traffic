@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+
+    <flow id="DToU_HDV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="blue" from="d" to="-u" end="10800" probability="1e-11" />
+    <flow id="DToU_ICV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="red" from="d" to="-u" end="10800" probability="0.04" />
+
+    <flow id="DToL_HDV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="blue" from="d" to="-l" end="10800" probability="1e-11" />
+    <flow id="DToL_ICV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="red" from="d" to="-l" end="10800" probability="0.04" />
+
+    <flow id="LToR_HDV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="blue" from="l" to="-r" end="10800" probability="1e-11" />
+    <flow id="LToR_ICV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="red" from="l" to="-r" end="10800" probability="0.04" />
+
+    <flow id="LToU_HDV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="blue" from="l" to="-u" end="10800" probability="1e-11" />
+    <flow id="LToU_ICV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="red" from="l" to="-u" end="10800" probability="0.04" />
+
+    <flow id="RToL_HDV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="blue" from="r" to="-l" end="10800" probability="1e-11" />
+    <flow id="RToL_ICV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="red" from="r" to="-l" end="10800" probability="0.04" />
+
+    <flow id="RToD_HDV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="blue" from="r" to="-d" end="10800" probability="1e-11" />
+    <flow id="RToD_ICV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="red" from="r" to="-d" end="10800" probability="0.04" />
+
+    <flow id="UToD_HDV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="blue" from="u" to="-d" end="10800" probability="1e-11" />
+    <flow id="UToD_ICV" begin="0.00" departLane="0" departSpeed="13.89" arrivalLane="0" color="red" from="u" to="-d" end="10800" probability="0.04" />
+
+    <flow id="UToR_HDV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="blue" from="u" to="-r" end="10800" probability="1e-11" />
+    <flow id="UToR_ICV" begin="0.00" departLane="1" departSpeed="13.89" arrivalLane="1" color="red" from="u" to="-r" end="10800" probability="0.04" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</routes>

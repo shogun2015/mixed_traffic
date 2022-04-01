@@ -185,8 +185,9 @@ class ICV_Controller:
                 self.static_veh_num += 1
 
         # a base row for adding more data
-        features = np.append(np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=int),
-                             np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=float))
+        # features = np.append(np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=int),
+        #                      np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=float))
+        features = np.zeros(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=int)
         # features = np.append(np.zeros(const_var.CELL_NUM_LANE, dtype=int), np.zeros(const_var.CELL_NUM_LANE, dtype=float))
 
         for LaneID in vehs_in_lane.keys():
@@ -253,7 +254,7 @@ class ICV_Controller:
                             feat_HDV_num_between_ICV_norm])
             """
             cell_array = -1 * np.ones(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=int)
-            cell_speed_array = -1 * np.ones(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=float)
+            # cell_speed_array = -1 * np.ones(const_var.CELL_NUM_JUNCTION + const_var.CELL_NUM_LANE, dtype=float)
             # cell_array = -1 * np.ones(const_var.CELL_NUM_LANE, dtype=int)
             # cell_speed_array = -1 * np.ones(const_var.CELL_NUM_LANE, dtype=float)
             junction_lane_ID = const_var.sourceLane_junction_map[LaneID]
@@ -261,13 +262,13 @@ class ICV_Controller:
                 cell_index = int(veh_info[2] // const_var.CELL_SIZE)
                 speed = traci.vehicle.getSpeed(veh_info[0])
                 cell_array[cell_index] = const_var.VehType.HDV
-                cell_speed_array[cell_index] = speed / 16
+                # cell_speed_array[cell_index] = speed / 16
 
             for index, veh_info in enumerate(ICV_in_lane[LaneID]):
                 cell_index = int(veh_info[2] // const_var.CELL_SIZE)
                 speed = traci.vehicle.getSpeed(veh_info[0])
                 cell_array[const_var.CELL_NUM_JUNCTION + cell_index] = const_var.VehType.ICV
-                cell_speed_array[const_var.CELL_NUM_JUNCTION + cell_index] = speed / 16
+                # cell_speed_array[const_var.CELL_NUM_JUNCTION + cell_index] = speed / 16
                 # cell_array[cell_index] = const_var.VehType.ICV
                 # cell_speed_array[cell_index] = speed / 16
 
@@ -275,11 +276,12 @@ class ICV_Controller:
                 cell_index = int(veh_info[2] // const_var.CELL_SIZE)
                 speed = traci.vehicle.getSpeed(veh_info[0])
                 cell_array[const_var.CELL_NUM_JUNCTION + cell_index] = const_var.VehType.HDV
-                cell_speed_array[const_var.CELL_NUM_JUNCTION + cell_index] = speed / 16
+                # cell_speed_array[const_var.CELL_NUM_JUNCTION + cell_index] = speed / 16
                 # cell_array[cell_index] = const_var.VehType.HDV
                 # cell_speed_array[cell_index] = speed / 16
 
-            row = np.append(cell_array, cell_speed_array)
+            # row = np.append(cell_array, cell_speed_array)
+            row = cell_array
             features = np.row_stack([features, row])
         features = features[1:, :]  # remove the first row
         return features
@@ -427,7 +429,7 @@ class ICV_Controller:
         remainder = pos - lanePostion
         if remainder_min < remainder:
             expectedA = np.abs((nowSpeed * nowSpeed - turnVelocity * turnVelocity) / (2 * remainder))
-            time_interval = np.abs(nowSpeed - turnVelocity) / expectedA
+            time_interval = np.abs(nowSpeed - turnVelocity) / (expectedA+0.001)
             # traci.vehicle.slowDown(vid, turnVelocity, time_interval)
             try:
                 traci.vehicle.setStop(vid, edgeID, pos, laneIndex=laneIndex)

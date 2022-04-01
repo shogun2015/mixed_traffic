@@ -71,7 +71,7 @@ class DeepLearningController(Controller):
         self.episode_transitions = []
         self.max_history_length = get_param_or_default(params, "max_history_length", 1)
         self.target_update_period = params["target_update_period"]
-        self.action_gen = params["action_gen"]
+        # self.action_gen = params["action_gen"]
         self.epsilon = 1
         self.epsilon_decay = 1.0/200
         self.epsilon_min = 0.01
@@ -101,16 +101,9 @@ class DeepLearningController(Controller):
     def policy(self, observations, adj, training_mode=True):
         self.current_histories = observations
         action_probs = self.joint_action_probs(self.current_histories, adj, training_mode)
+        # action_probs = torch.stack(action_probs, -1)
         action = np.copy(action_probs)
 
-        if self.action_gen == "thresh":
-            action[action > 0.5] = 1
-            action[action <= 0.5] = 0
-        elif self.action_gen == "QtoA":
-            action = Q_to_Action(action)
-        else:
-            print("Please specify action generation method")
-            sys.exit()
 
         return action
         # return [numpy.random.choice(self.actions, p=probs) for probs in action_probs]

@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     # batch_32_pass_rewardx1_GAT_step.csv
     path_base = "/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/result/"
-    exp_name = "Q_to_action_GAT"
+    exp_name = "extract_ControlInterval_25_ActionGen_QtoA_mlp_GAT"
 
     file_time = path_base + "{}_time.csv".format(exp_name)
     file_step = path_base + "{}_step.csv".format(exp_name)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     sns.heatmap(gat_time_data,
                 cmap=plt.cm.Blues,
                 fmt='.1f',
-                vmax=30, vmin=0,
+                vmax=50, vmin=0,
                 linewidths=0.1,
                 xticklabels=True, yticklabels=True,
                 annot=True)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     sns.heatmap(gat_step_data,
                 cmap=plt.cm.Blues,
                 fmt='.0f',
-                vmax=3000, vmin=0,
+                vmax=1000, vmin=0,
                 linewidths=0.1,
                 xticklabels=True, yticklabels=True,
                 annot=True)

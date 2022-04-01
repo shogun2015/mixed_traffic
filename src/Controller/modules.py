@@ -40,6 +40,38 @@ class AdversarialModule(torch.nn.Module):
         torch.save(self.protagonist_net.state_dict(), path)
 
 
+class MLP_REPEAT(nn.Module):
+
+    def __init__(self, input_shape, max_sequence_length, nr_hidden_units=64):
+        super(MLP_REPEAT, self).__init__()
+        self.input_shape = input_shape
+        self.view_length_0 = self.input_shape[0]
+        self.view_length_1 = self.input_shape[1]
+        # self.nr_input_features = numpy.prod(self.input_shape)*max_sequence_length
+        self.nr_input_features = self.view_length_1
+        self.max_sequence_length = max_sequence_length
+        self.nr_hidden_units = nr_hidden_units
+        if max_sequence_length > 1:
+            self.nr_hidden_units = int(2*nr_hidden_units)
+        self.fc_net = nn.Sequential(
+            nn.Linear(self.nr_input_features, self.nr_hidden_units),
+            nn.ELU(),
+            nn.Linear(self.nr_hidden_units, self.nr_hidden_units),
+            nn.ELU(),
+            nn.Linear(self.nr_hidden_units, 2)
+        )
+
+    def forward(self, x):
+        x = x.view(-1, self.view_length_0, self.view_length_1)
+        # sequence_length = x.size(0)
+        # batch_size = x.size(1)
+        # assert self.max_sequence_length == sequence_length, "Got shape: {}".format(x.size())
+        # x = x.view(sequence_length, batch_size, -1)
+        # x = x.permute(1, 0, 2)
+        # x = torch.reshape(x, (batch_size, -1))
+        return self.fc_net(x)
+
+
 class MLP(nn.Module):
 
     def __init__(self, input_shape, max_sequence_length, nr_hidden_units=64):

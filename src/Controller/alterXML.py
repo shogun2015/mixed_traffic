@@ -10,7 +10,7 @@ def write_xml(tree, path):
     tree.write(path, encoding="utf-8", xml_declaration=True)
 
 
-def alterDemand(path, probability, icv_ratio):
+def alterDemand_random(path, probability, icv_ratio):
     tree = read_xml(path)
     root = tree.getroot()
     probability_icv = probability * icv_ratio

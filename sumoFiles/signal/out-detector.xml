@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2022-03-28 05:52:14 by Eclipse SUMO sumo Version 1.12.0
+<!-- generated on 2022-04-01 14:33:34 by Eclipse SUMO sumo Version 1.12.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
         <net-file value="/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS.net.xml"/>
-        <route-files value="/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS-uniform-1.rou.xml"/>
+        <route-files value="/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/TLS-uniform-14.rou.xml"/>
         <additional-files value="/home/wuth-3090/Code/yz_mixed_traffic/mixed_traffic/mixed_traffic/sumoFiles/signal/add-detector.xml"/>
     </input>
 
@@ -22,7 +22,7 @@
     </processing>
 
     <traci_server>
-        <remote-port value="15912"/>
+        <remote-port value="17253"/>
     </traci_server>
 
     <gui_only>
@@ -31,7 +31,3 @@
     </gui_only>
 
 </configuration>
--->
-
-<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
-</detector>

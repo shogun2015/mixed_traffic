@@ -9,6 +9,7 @@ import agents.ppomix as ppomix
 import agents.vdn as vdn
 import agents.qmix as qmix
 import agents.UPDeT as updet
+import agents.ppo_continuous as ppo_con
 import argparse
 
 def make(algorithm, params={}):
@@ -21,6 +22,9 @@ def make(algorithm, params={}):
     if algorithm == "PPO":
         params["adversary_ratio"] = 0
         return ppo.PPOLearner(params)
+    if algorithm == "PPOC":
+        params["adversary_ratio"] = 0
+        return ppo_con.PPO_con_Learner(params)
     if algorithm == "IAC":
         params["adversary_ratio"] = 0
         return a2c.A2CLearner(params)

@@ -9,6 +9,8 @@ class const_var:
 
     action_gen_list = ["thresh", "QtoA"]
 
+    flows = ["uniform", "random", "mixed"]
+
     """
     timestep:247 	 vid:DToU_HDV.0 	 travel_time:12.047461378523302
     timestep:900 	 vid:DToU_HDV.1 	 travel_time:13.599140835551509
